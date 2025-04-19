@@ -1,0 +1,80 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+/dist
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.cache/
+.npm
+
+# IDE specific files
+.idea/
+.vscode/
+*.code-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# User-specific files
+Thumbs.db
+desktop.ini
+
+# Optional npm cache & logs
+.log
+logs
+*.log
+
+# Build artifacts
+*.tsbuildinfo
+
+# JWT tokens or secrets
+*.pem
+*.key
+
+# Media uploads
+/uploads
+/public/uploads
+/student-photos
+/profile-pictures
+
+# Backend / API related
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.sqlite3
+*.db
+
+# Temporary files
+*.tmp
+*.swp
+.temp/
+
+# CDN Cache
+.cache/
