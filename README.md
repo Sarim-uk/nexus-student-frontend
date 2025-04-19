@@ -105,7 +105,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Contact
 
-For support or inquiries, please reach out to support@nexus-education.com or visit our website at [nexusacademyuk.com](https://nexusacademyuk.com).
+For support or inquiries, please reach out to inquiries@nexusacademyuk.com or visit our website at [nexusacademyuk.com](https://nexusacademyuk.com).
 
 ---
 
