@@ -37,6 +37,7 @@ const ThemeSettings = ({ onSuccess, onError }) => {
     const fetchThemeFromServer = async () => {
       try {
         const response = await settingsService.getNotificationPreferences();
+        console.log('Server theme response:', response.data);
         if (response.data && response.data.theme) {
           setThemeMode(response.data.theme);
           setFollowSystem(response.data.follow_system_theme || false);
@@ -55,9 +56,13 @@ const ThemeSettings = ({ onSuccess, onError }) => {
     if (loading) return;
     
     const applyTheme = (theme) => {
-      // In a real implementation, you would add/remove the 'dark' class from the <html> tag
-      // For this demo, we'll just update a console log
-      document.documentElement.className = theme === 'dark' ? 'dark' : '';
+      // Add or remove the 'dark' class from the <html> tag
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
       console.log(`Theme changed to: ${theme}`);
       
       // Store in localStorage
@@ -76,8 +81,15 @@ const ThemeSettings = ({ onSuccess, onError }) => {
         applyTheme(e.matches ? 'dark' : 'light');
       };
       
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
+      // Use the correct event listener based on browser support
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        // For older browsers
+        mediaQuery.addListener(handleChange);
+        return () => mediaQuery.removeListener(handleChange);
+      }
     } else {
       // Use the user's explicit preference
       applyTheme(themeMode);
