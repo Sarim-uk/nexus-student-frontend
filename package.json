@@ -6,6 +6,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@zegocloud/zego-uikit-prebuilt": "^2.14.3-beta",
     "axios": "^1.8.4",
     "dayjs": "^1.11.13",
     "framer-motion": "^10.12.4",
@@ -14,7 +15,8 @@
     "react-router-dom": "^6.10.0",
     "react-scripts": "5.0.1",
     "recharts": "^2.15.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "zego-express-engine-webrtc": "^3.9.0"
   },
   "scripts": {
     "start": "react-scripts start",

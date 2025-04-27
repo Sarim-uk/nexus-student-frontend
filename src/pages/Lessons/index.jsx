@@ -5,6 +5,7 @@ import authService from '../../services/auth';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import calendar from 'dayjs/plugin/calendar';
+import VideoCallButton from '../../components/VideoCallButton';
 
 // Initialize dayjs plugins
 dayjs.extend(relativeTime);
@@ -313,44 +314,8 @@ const Lessons = () => {
 
   // Check if lesson can be joined
   const canJoinLesson = (startTime, endTime) => {
-    if (!startTime || !dayjs(startTime).isValid()) {
-      return false; // Can't join if start time is invalid
-    }
-    const start = dayjs(startTime);
-    const end = endTime && dayjs(endTime).isValid() ? dayjs(endTime) : start.add(1, 'hour');
-    
-    // Allow joining 5 minutes before start time and until end time
-    return currentTime.isAfter(start.subtract(5, 'minute')) && currentTime.isBefore(end);
-  };
-
-  // Handle join lesson
-  const handleJoinLesson = async (lesson) => {
-    if (!lesson.meeting_link) {
-      alert('No meeting link available for this session. Please contact your tutor.');
-      return;
-    }
-    
-    if (canJoinLesson(lesson.start_time, lesson.end_time)) {
-      try {
-        // Try to call join API if it exists
-        if (lesson.id) {
-          try {
-            await lessonsService.joinLesson(lesson.id);
-            console.log('Successfully joined lesson');
-          } catch (joinError) {
-            console.warn('Join API call failed, proceeding to open meeting link:', joinError);
-          }
-        }
-        
-        // Open meeting link in a new tab
-        window.open(lesson.meeting_link, '_blank');
-      } catch (error) {
-        console.error('Error joining lesson:', error);
-        alert('Failed to join the session. Please try again.');
-      }
-    } else {
-      alert('This session cannot be joined right now. You can join 5 minutes before the start time.');
-    }
+    // Removing time restrictions - all sessions can be joined at any time
+    return true;
   };
 
   // Group lessons by date
@@ -449,19 +414,11 @@ const Lessons = () => {
                       </div>
                       
                       <div className="mt-4 flex justify-end">
-                        <motion.button 
-                          className={`px-6 py-2 rounded-md font-medium ${
-                            joinable 
-                              ? 'bg-primary text-white hover:bg-primary/90' 
-                              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
-                          onClick={() => handleJoinLesson(lesson)}
-                          whileHover={joinable ? { scale: 1.03 } : {}}
-                          whileTap={joinable ? { scale: 0.97 } : {}}
+                        <VideoCallButton 
+                          lessonId={lesson.id}
                           disabled={!joinable}
-                        >
-                          Join Now
-                        </motion.button>
+                          className={joinable ? "transform hover:scale-103 active:scale-97 transition-transform" : ""}
+                        />
                       </div>
                     </div>
                   </motion.div>

@@ -8,6 +8,7 @@ import Assignments from '../pages/Assignments';
 import Notes from '../pages/Notes';
 import Settings from '../pages/Settings';
 import Login from '../pages/auth/Login';
+import VideoRoom from '../pages/VideoRoom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import authService from '../services/auth';
 
@@ -26,6 +27,13 @@ const AppRoutes = () => {
       {/* Redirect root based on auth status */}
       <Route path="/" element={
         isStudent ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+      } />
+
+      {/* Video Room route - outside MainLayout */}
+      <Route path="/room/:roomId" element={
+        <ProtectedRoute>
+          <VideoRoom />
+        </ProtectedRoute>
       } />
       
       {/* Protected routes using the MainLayout */}
