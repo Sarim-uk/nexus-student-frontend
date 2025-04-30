@@ -61,41 +61,39 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Clear any previous general error
     setError('');
     
-    // Validate form
-    if (!validateForm()) {
+    // Validate form inputs
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
     
+    setErrors({});
     setLoading(true);
     
     try {
-      // Call login API using auth service
-      await authService.login(credentials.email, credentials.password);
+      const response = await authService.login(credentials.email, credentials.password);
       
-      // Check if user is a student
-      const user = authService.getCurrentUser();
-      if (!user || !user.role || user.role.toLowerCase() !== 'student') {
-        // Clear auth data if user is not a student
-        authService.logout();
-        setError('Access denied. Only students can access this portal.');
+      // Check if the user is a student
+      if (response.user && response.user.role !== 'student') {
+        setError('This portal is only for students. Please use the appropriate portal for your role.');
         return;
       }
       
-      // Redirect to dashboard or intended location
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+      // Dispatch custom event for successful login
+      window.dispatchEvent(new Event('loginSuccess'));
+      
+      // Redirect to dashboard
+      navigate('/');
       
     } catch (err) {
       console.error('Login error:', err);
       
-      // Handle different error responses
       if (err.response) {
         if (err.response.status === 401) {
-          setError('Invalid email or password');
+          setError('Invalid email or password. Please try again.');
         } else if (err.response.data?.error) {
           setError(err.response.data.error);
         } else if (err.response.data?.detail) {

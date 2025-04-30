@@ -52,7 +52,7 @@ export const dashboardService = {
   getDashboard: () => api.get('/api/dashboard/'),
   getNextLesson: () => api.get('/api/student/next-lesson/'),
   getPendingAssignments: () => api.get('/api/student/assignments/pending/'),
-  getRecentNotes: () => api.get('/api/student/notes/recent/'),
+  getRecentNotes: () => api.get('/notes/'),
   getPerformance: () => api.get('/api/student/performance/'),
   getWeeklySnapshot: () => api.get('/api/student/weekly-snapshot/'),
 };
@@ -80,11 +80,11 @@ export const assignmentsService = {
 
 // Notes services
 export const notesService = {
-  getNotes: () => api.get('/api/student/notes/'),
-  getNotesByStudentId: (studentId) => api.get(`/api/student/notes/student/${studentId}/`),
-  getNoteById: (id) => api.get(`/api/student/notes/${id}/`),
-  downloadNote: (id) => api.get(`/api/student/notes/${id}/download/`, { responseType: 'blob' }),
-  getSessionNotes: (sessionId) => api.get(`/api/student/notes/session/${sessionId}/`),
+  getNotes: () => api.get('/notes/'),
+  getNotesByStudentId: (studentId) => api.get(`/notes/student/${studentId}/`),
+  getNoteById: (id) => api.get(`/notes/${id}/`),
+  downloadNote: (id) => api.get(`/notes/${id}/`, { responseType: 'blob' }),
+  getSessionNotes: (sessionId) => api.get(`/notes/session/${sessionId}/`),
 };
 
 // Profile services
@@ -93,7 +93,7 @@ export const profileService = {
   getTutorProfile: () => api.get('/tutor-profile/'),
   updateStudentProfile: (data) => api.post('/student-profile/', data), // Using POST because the API supports it for updates
   updateUserInfo: (userId, data) => api.put(`/users/${userId}/`, data), // Changed from PATCH to PUT
-  getTutorRecommendations: () => api.get('/tutor-recommendations/'),
+  getTutorRecommendations: (topN = 5) => api.get(`/tutor-recommendations/?top_n=${topN}`),
   provideFeedback: (data) => api.post('/recommendation-feedback/', data),
 };
 

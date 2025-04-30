@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { profileService } from '../../services/api';
 import authService from '../../services/auth';
 import dayjs from 'dayjs';
+import useTutorRecommendations from '../../hooks/useTutorRecommendations';
 
 // Animation variants
 const containerVariants = {
@@ -41,65 +42,73 @@ const Profile = () => {
     dob: '',
     address: '',
   });
+  const [profileUpdated, setProfileUpdated] = useState(0); // Counter to track profile updates
+  
+  // Get recommendations (will update when profileUpdated changes)
+  const { refetch: refreshRecommendations } = useTutorRecommendations({
+    fetchOnMount: false,
+    profileState: profileUpdated
+  });
+
+  // Function to fetch user data - moved outside useEffect so it can be called from anywhere in the component
+  const fetchUserData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get current user from auth service
+      const userData = authService.getCurrentUser();
+      if (!userData) {
+        throw new Error('User not authenticated');
+      }
+      
+      setUser(userData);
+      
+      // Initialize form with user data even without profile
+      setFormData({
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        phone: '',
+        dob: '',
+        address: '',
+      });
+      
+      // Fetch profile data
+      try {
+        const profileResponse = await profileService.getStudentProfile();
+        
+        if (profileResponse && profileResponse.data) {
+          setProfile(profileResponse.data);
+          
+          // Update form with profile data
+          setFormData(prevData => ({
+            ...prevData,
+            phone: profileResponse.data.phone || '',
+            dob: profileResponse.data.dob || '',
+            address: profileResponse.data.address || '',
+          }));
+        }
+      } catch (profileError) {
+        console.log('Profile fetch error:', profileError);
+        
+        // For database schema errors (500) or not found (404), just continue with user data
+        if ((profileError.response && profileError.response.status === 404) || 
+            (profileError.response && profileError.response.status === 500)) {
+          console.log('Using default profile values due to profile fetch error');
+          // Already initialized above, no need to do anything
+        } else {
+          throw profileError;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching profile data:', err);
+      setError('Failed to load complete profile data. Basic information is shown, but some features may be limited.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Get current user from auth service
-        const userData = authService.getCurrentUser();
-        if (!userData) {
-          throw new Error('User not authenticated');
-        }
-        
-        setUser(userData);
-        
-        // Initialize form with user data even without profile
-        setFormData({
-          first_name: userData.first_name || '',
-          last_name: userData.last_name || '',
-          phone: '',
-          dob: '',
-          address: '',
-        });
-        
-        // Fetch profile data
-        try {
-          const profileResponse = await profileService.getStudentProfile();
-          
-          if (profileResponse && profileResponse.data) {
-            setProfile(profileResponse.data);
-            
-            // Update form with profile data
-            setFormData(prevData => ({
-              ...prevData,
-              phone: profileResponse.data.phone || '',
-              dob: profileResponse.data.dob || '',
-              address: profileResponse.data.address || '',
-            }));
-          }
-        } catch (profileError) {
-          console.log('Profile fetch error:', profileError);
-          
-          // For database schema errors (500) or not found (404), just continue with user data
-          if ((profileError.response && profileError.response.status === 404) || 
-              (profileError.response && profileError.response.status === 500)) {
-            console.log('Using default profile values due to profile fetch error');
-            // Already initialized above, no need to do anything
-          } else {
-            throw profileError;
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching profile data:', err);
-        setError('Failed to load complete profile data. Basic information is shown, but some features may be limited.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchUserData();
   }, []);
 
@@ -123,96 +132,94 @@ const Profile = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    // First name validation
-    if (!formData.first_name.trim()) {
+    // Validate first name
+    if (!formData.first_name || formData.first_name.trim() === '') {
       newErrors.first_name = 'First name is required';
     }
     
-    // Last name validation
-    if (!formData.last_name.trim()) {
+    // Validate last name
+    if (!formData.last_name || formData.last_name.trim() === '') {
       newErrors.last_name = 'Last name is required';
     }
     
-    // Phone validation (optional)
-    if (formData.phone && !/^\+?[\d\s()-]{10,15}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Please enter a valid phone number';
+    // Validate phone (if provided)
+    if (formData.phone && !/^[\d\s\-+()]*$/.test(formData.phone)) {
+      newErrors.phone = 'Invalid phone number format';
     }
     
-    // Date validation (optional)
+    // Validate date of birth (if provided)
     if (formData.dob) {
       const dobDate = new Date(formData.dob);
       const today = new Date();
-      
       if (isNaN(dobDate.getTime())) {
-        newErrors.dob = 'Please enter a valid date';
+        newErrors.dob = 'Invalid date format';
       } else if (dobDate > today) {
         newErrors.dob = 'Date of birth cannot be in the future';
       }
     }
     
-    // Set field errors
-    setFieldErrors(newErrors);
-    
-    // Set form errors
     if (Object.keys(newErrors).length > 0) {
-      setError('Please fix the form errors before submitting.');
-      return false;
+      setFieldErrors(newErrors);
     }
     
-    return true;
+    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form before submission
-    if (!validateForm()) {
+    // Validate form
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
     
+    setFieldErrors({});
     setLoading(true);
-    setError(null);
-    setSuccess(null);
+    setError('');
+    setSuccess('');
     
     try {
-      // Get current user from auth service
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Update profile info with all fields (including first_name and last_name)
-      const profileUpdateData = {
-        user: currentUser.id,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        phone: formData.phone || null,
-        dob: formData.dob || null,
-        address: formData.address || null
-      };
-      
-      const response = await profileService.updateStudentProfile(profileUpdateData);
-      
-      if (response && response.data) {
-        setProfile(response.data);
-        
-        // Update user data in localStorage
-        const updatedUser = {
-          ...currentUser,
+      // Update user info first
+      if (user?.id) {
+        const userUpdateData = {
           first_name: formData.first_name,
           last_name: formData.last_name,
         };
         
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        
-        setSuccess('Profile updated successfully!');
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
+        await profileService.updateUserInfo(user.id, userUpdateData);
       }
+      
+      // Then update profile
+      const profileUpdateData = {
+        phone: formData.phone,
+        dob: formData.dob,
+        address: formData.address
+      };
+      
+      await profileService.updateStudentProfile(profileUpdateData);
+      
+      // Update localStorage user
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          first_name: formData.first_name,
+          last_name: formData.last_name
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      // Show success message
+      setSuccess('Profile updated successfully!');
+      
+      // Trigger recommendations refresh by updating the counter
+      setProfileUpdated(prev => prev + 1);
+      
+      // Refresh user data
+      fetchUserData();
+      
     } catch (err) {
       console.error('Error updating profile:', err);
       setError('Failed to update profile. Please try again.');

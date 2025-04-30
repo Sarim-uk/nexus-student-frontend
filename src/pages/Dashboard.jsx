@@ -8,6 +8,7 @@ import {
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import calendar from 'dayjs/plugin/calendar';
+import TutorRecommendationsSection from '../components/dashboard/TutorRecommendationsSection';
 
 // Initialize dayjs plugins
 dayjs.extend(relativeTime);
@@ -639,6 +640,11 @@ const Dashboard = () => {
               </div>
             )}
               </div>
+            </motion.div>
+            
+            {/* Tutor Recommendations Section */}
+            <motion.div variants={itemVariants} className="col-span-1 md:col-span-2 lg:col-span-3">
+              <TutorRecommendationsSection />
             </motion.div>
         </div>
     </motion.div>
