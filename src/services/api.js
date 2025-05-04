@@ -95,6 +95,8 @@ export const profileService = {
   updateUserInfo: (userId, data) => api.put(`/users/${userId}/`, data), // Changed from PATCH to PUT
   getTutorRecommendations: (topN = 5) => api.get(`/tutor-recommendations/?top_n=${topN}`),
   provideFeedback: (data) => api.post('/recommendation-feedback/', data),
+  getTutorDetails: (tutorId) => api.get(`/tutors/${tutorId}/`),
+  getTutorById: (tutorId) => api.get(`/users/${tutorId}/`),
 };
 
 // Progress services
