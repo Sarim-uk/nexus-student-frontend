@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ZegoRoom from '../components/ZegoRoom';
+import TutoringSession from '../components/TutoringSession';
 
 const VideoRoom = () => {
   const { roomId } = useParams();
@@ -10,7 +10,7 @@ const VideoRoom = () => {
 
   useEffect(() => {
     // Get user data from localStorage
-    try {
+    try {           
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const userId = user.id || localStorage.getItem('user_id');
       const userName = user.name || localStorage.getItem('user_name') || `Student-${userId}`;
@@ -64,9 +64,9 @@ const VideoRoom = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
+      <div className="container mx-auto px-4 py-2">
+        <div className="mb-2">
           <h1 className="text-2xl font-serif font-semibold text-dark">
             Video Session <span className="text-primary">Room</span>
           </h1>
@@ -74,16 +74,10 @@ const VideoRoom = () => {
             Room ID: {roomId}
           </p>
         </div>
-        
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[600px]">
-          <ZegoRoom
-            roomId={roomId}
-            userId={userData.userId}
-            userName={userData.userName}
-            role="Student"
-            onLeaveRoom={handleLeaveRoom}
-          />
-        </div>
+      </div>
+      
+      <div className="flex-grow bg-white rounded-lg shadow-lg overflow-hidden" style={{ height: 'calc(100vh - 80px)' }}>
+        <TutoringSession />
       </div>
     </div>
   );
