@@ -30,7 +30,7 @@ const AppRoutes = () => {
       } />
 
       {/* Video Room route - outside MainLayout */}
-      <Route path="/room/:roomId" element={
+      <Route path="/room" element={
         <ProtectedRoute>
           <VideoRoom />
         </ProtectedRoute>

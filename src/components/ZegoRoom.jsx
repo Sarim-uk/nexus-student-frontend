@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
-import { APP_ID, APP_SIGN } from '../config/zegoCloud';
 import { useNavigate } from 'react-router-dom';
+import { Box, Typography } from '@mui/material';
 
 const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
   const navigate = useNavigate();
@@ -20,12 +20,14 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
     // Create a room instance
     const initRoom = async () => {
       // Get token
+      const appID = 1107019978;
+      const serverSecret = "127d2f6d02d86b17d71284c585bb8b44";
       const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-        APP_ID,
-        APP_SIGN,
+        appID,
+        serverSecret,
         roomId,
         userId,
-        userName || `User-${userId}`
+        userName || `Student-${userId}`
       );
 
       // Create instance
@@ -35,12 +37,12 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
       zp.joinRoom({
         container: element,
         scenario: {
-          mode: ZegoUIKitPrebuilt.OneONoneCall,
+          mode: ZegoUIKitPrebuilt.VideoConference,
         },
         sharedLinks: [
           {
-            name: 'Copy Link',
-            url: `${window.location.origin}/room/${roomId}`,
+            name: 'Personal link',
+            url: `${window.location.protocol}//${window.location.host}${window.location.pathname}?roomID=${roomId}`,
           },
         ],
         turnOnMicrophoneWhenJoining: true,
@@ -51,9 +53,9 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
         showScreenSharingButton: true,
         showTextChat: true,
         showUserList: true,
-        maxUsers: 50,
-        layout: "Grid",
-        showLayoutButton: true,
+        maxUsers: 2,
+        layout: "Auto",
+        showLayoutButton: false,
         onLeaveRoom: () => {
           // Handle leaving room
           if (onLeaveRoom) {
@@ -74,13 +76,49 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
   }, [roomId, userId, userName, onLeaveRoom, navigate]);
 
   return (
-    <div className="w-full h-full min-h-[600px] bg-background rounded-lg overflow-hidden">
-      <div
-        className="w-full h-full"
+    <Box 
+      sx={{
+        width: '100%',
+        height: '100%',
+        minHeight: '600px',
+        backgroundColor: 'background.paper',
+        borderRadius: 1,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
+      {(!roomId || !userId) && (
+        <Box 
+          sx={{ 
+            p: 3, 
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%'
+          }}
+        >
+          <Typography variant="h6" color="error">
+            Missing room information
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Room ID and User ID are required to join a meeting.
+          </Typography>
+        </Box>
+      )}
+      
+      <Box
         ref={roomRef}
-      ></div>
-    </div>
+        sx={{
+          width: '100%',
+          height: '100%',
+          flex: 1
+        }}
+      />
+    </Box>
   );
 };
 
-export default ZegoRoom; 
+export default ZegoRoom;

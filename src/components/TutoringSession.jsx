@@ -4,6 +4,7 @@ import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import MeetingNotes from './MeetingNotes';
 import { useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 
 // Simple function to generate a random numeric ID
 function getRandomID() {
@@ -19,12 +20,14 @@ export function getUrlParams(url = window.location.href) {
 }
 
 export default function TutoringSession() {
+  const { roomId } = useParams();
   // Get user from Redux, but have fallbacks for everything
   const user = useSelector((state) => state.auth.user);
   const reduxUserId = useSelector((state) => state.auth.user_id);
   
   // Get user data from localStorage as fallback
   const [localUserData, setLocalUserData] = useState(null);
+  const [sessionData, setSessionData] = useState(null);
   
   useEffect(() => {
     try {
@@ -34,9 +37,37 @@ export default function TutoringSession() {
       console.error('Error parsing user data from localStorage:', error);
     }
   }, []);
+
+  // Fetch session data when component mounts
+  useEffect(() => {
+    const fetchSessionData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        // Get room ID from URL parameters
+        const urlRoomId = getUrlParams(window.location.href)['roomID'];
+        if (!urlRoomId) {
+          console.error('No room ID found in URL');
+          return;
+        }
+
+        console.log('Using room ID from URL:', urlRoomId);
+        setSessionData({ tutor_room_id: urlRoomId });
+      } catch (error) {
+        console.error('Error setting session data:', error);
+      }
+    };
+
+    fetchSessionData();
+  }, []);
   
   // Always ensure we have valid values for ZegoCloud
+  // Priority order for roomID:
+  // 1. Room ID from URL parameters
+  // 2. Random ID as last resort
   const roomID = getUrlParams(window.location.href)['roomID'] || getRandomID();
+  
   const userID = reduxUserId || (localUserData?.id) || localStorage.getItem('user_id') || getRandomID();
   
   // Format name as first_name + last_name to match dashboard
@@ -63,6 +94,12 @@ export default function TutoringSession() {
                   formatFullName(localUserData) || 
                   localStorage.getItem('user_name') || 
                   `Student-${userID}`;
+  
+  // Debug logging for room ID
+  useEffect(() => {
+    console.log('Current room ID:', roomID);
+    console.log('URL params:', getUrlParams(window.location.href));
+  }, [roomID]);
   
   const [meetingNotes, setMeetingNotes] = useState('');
   const videoRef = useRef(null);
