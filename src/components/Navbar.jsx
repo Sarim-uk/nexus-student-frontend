@@ -43,7 +43,7 @@ const Navbar = ({ user }) => {
       <div className="flex items-center">
         <Link to="/dashboard" className="group flex items-center">
           <span className="text-2xl font-serif font-semibold text-primary relative">
-            Nexus
+            Nexus Academy UK
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-accent group-hover:w-full transition-all duration-300"></span>
           </span>
           <span className="ml-2 text-xs font-medium text-gray-500 uppercase tracking-wider mt-1 bg-gray-50 px-2 py-1 rounded">Student Portal</span>

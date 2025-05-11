@@ -66,7 +66,7 @@ const authService = {
         throw new Error('No refresh token available');
       }
       
-      const response = await api.post('/refresh-token/', { refresh_token: refreshToken });
+      const response = await api.post('/token/refresh/', { refresh_token: refreshToken });
       
       if (response.data && response.data.access_token) {
         localStorage.setItem('access_token', response.data.access_token);

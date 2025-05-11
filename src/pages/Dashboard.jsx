@@ -9,6 +9,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import calendar from 'dayjs/plugin/calendar';
 import TutorRecommendationsSection from '../components/dashboard/TutorRecommendationsSection';
+import PerformanceInsightsPanel from '../components/dashboard/PerformanceInsightsPanel';
 
 // Initialize dayjs plugins
 dayjs.extend(relativeTime);
@@ -40,28 +41,6 @@ const itemVariants = {
 // Chart colors
 const COLORS = ['#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#ef4444', '#f59e0b'];
 
-// Mock data for development
-const mockPerformanceData = [
-  { assignment_name: 'Math Quiz 1', score: 85, max_score: 100 },
-  { assignment_name: 'History Essay', score: 92, max_score: 100 },
-  { assignment_name: 'Physics Lab', score: 78, max_score: 100 },
-  { assignment_name: 'English Project', score: 88, max_score: 100 },
-  { assignment_name: 'Chemistry Test', score: 95, max_score: 100 },
-  { assignment_name: 'Biology Report', score: 90, max_score: 100 },
-];
-
-const mockWeeklySnapshot = {
-  lessons: [
-    { id: 1, day: 'Monday', subject: 'Mathematics', time: '10:00 AM' },
-    { id: 2, day: 'Wednesday', subject: 'Physics', time: '2:00 PM' },
-    { id: 3, day: 'Friday', subject: 'English', time: '11:30 AM' }
-  ],
-  assignments: [
-    { id: 1, title: 'Math Problem Set', dueDay: 'Tuesday', subject: 'Mathematics' },
-    { id: 2, title: 'Physics Lab Report', dueDay: 'Thursday', subject: 'Physics' }
-  ]
-};
-
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,6 +55,13 @@ const Dashboard = () => {
     seconds: 0
   });
   const [userData, setUserData] = useState(null);
+  const [showFallbackUI, setShowFallbackUI] = useState(false);
+  const [isPerformanceLoading, setIsPerformanceLoading] = useState(true);
+  const [isNextLessonLoading, setIsNextLessonLoading] = useState(true);
+  const [pendingAssignments, setPendingAssignments] = useState([]);
+  const [isPendingAssignmentsLoading, setIsPendingAssignmentsLoading] = useState(true);
+  const [isRecentNotesLoading, setIsRecentNotesLoading] = useState(true);
+  const [isWeeklySnapshotLoading, setIsWeeklySnapshotLoading] = useState(true);
 
   // Get user data from localStorage
   useEffect(() => {
@@ -94,6 +80,48 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setIsPerformanceLoading(true);
+      setIsNextLessonLoading(true);
+      setIsPendingAssignmentsLoading(true);
+      setIsRecentNotesLoading(true);
+      setIsWeeklySnapshotLoading(true);
+
+      // Set timeouts to ensure loading states eventually turn off
+      const performanceTimeout = setTimeout(() => {
+        if (isPerformanceLoading) {
+          console.log("Performance loading timed out");
+          setIsPerformanceLoading(false);
+        }
+      }, 8000);
+      
+      const nextLessonTimeout = setTimeout(() => {
+        if (isNextLessonLoading) {
+          console.log("Next lesson loading timed out");
+          setIsNextLessonLoading(false);
+        }
+      }, 8000);
+      
+      const assignmentsTimeout = setTimeout(() => {
+        if (isPendingAssignmentsLoading) {
+          console.log("Assignments loading timed out");
+          setIsPendingAssignmentsLoading(false);
+        }
+      }, 8000);
+      
+      const notesTimeout = setTimeout(() => {
+        if (isRecentNotesLoading) {
+          console.log("Notes loading timed out");
+          setIsRecentNotesLoading(false);
+        }
+      }, 8000);
+      
+      const snapshotTimeout = setTimeout(() => {
+        if (isWeeklySnapshotLoading) {
+          console.log("Weekly snapshot loading timed out");
+          setIsWeeklySnapshotLoading(false);
+        }
+      }, 8000);
+
       try {
         // Attempt to fetch all dashboard data in parallel
         const [
@@ -131,10 +159,13 @@ const Dashboard = () => {
           }
         } else {
           console.log("No next lesson data available");
+          setNextLesson(null);
         }
+        clearTimeout(nextLessonTimeout);
+        setIsNextLessonLoading(false);
         
         // Process assignments
-        if (assignmentsRes.data && assignmentsRes.data.length > 0) {
+        if (assignmentsRes.data && Array.isArray(assignmentsRes.data) && assignmentsRes.data.length > 0) {
           const formattedAssignments = assignmentsRes.data.map(assignment => ({
             id: assignment.id,
             title: assignment.title,
@@ -145,12 +176,17 @@ const Dashboard = () => {
           }));
           
           setAssignments(formattedAssignments);
+          setPendingAssignments(formattedAssignments);
         } else {
           console.log("No assignments data available");
+          setAssignments([]);
+          setPendingAssignments([]);
         }
+        clearTimeout(assignmentsTimeout);
+        setIsPendingAssignmentsLoading(false);
         
         // Process notes
-        if (notesRes.data && notesRes.data.length > 0) {
+        if (notesRes.data && Array.isArray(notesRes.data) && notesRes.data.length > 0) {
           const formattedNotes = notesRes.data.map(note => ({
             id: note.id,
             title: note.title || "Untitled Note",
@@ -165,39 +201,71 @@ const Dashboard = () => {
           setRecentNotes(formattedNotes);
         } else {
           console.log("No notes data available");
+          setRecentNotes([]);
         }
+        clearTimeout(notesTimeout);
+        setIsRecentNotesLoading(false);
         
         // Process performance data
-        if (performanceRes.data && performanceRes.data.length > 0) {
+        if (performanceRes.data && Array.isArray(performanceRes.data) && performanceRes.data.length > 0) {
           setPerformanceData(performanceRes.data);
         } else {
           console.log("No performance data available");
-          // Use mock data for development
-          setPerformanceData(mockPerformanceData);
+          setPerformanceData([]);
         }
+        clearTimeout(performanceTimeout);
+        setIsPerformanceLoading(false);
         
         // Process weekly snapshot
         if (weeklySnapshotRes.data && 
+            (Array.isArray(weeklySnapshotRes.data.lessons) || Array.isArray(weeklySnapshotRes.data.assignments)) &&
             (weeklySnapshotRes.data.lessons?.length > 0 || weeklySnapshotRes.data.assignments?.length > 0)) {
           setWeeklySnapshot(weeklySnapshotRes.data);
         } else {
           console.log("No weekly snapshot data available");
-          // Use mock data for development
-          setWeeklySnapshot(mockWeeklySnapshot);
+          setWeeklySnapshot({ lessons: [], assignments: [] });
         }
+        clearTimeout(snapshotTimeout);
+        setIsWeeklySnapshotLoading(false);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
         
-        // For development/error fallback, set mock data
-        setPerformanceData(mockPerformanceData);
-        setWeeklySnapshot(mockWeeklySnapshot);
+        // Clear all timeouts and set loading states to false
+        clearTimeout(performanceTimeout);
+        clearTimeout(nextLessonTimeout);
+        clearTimeout(assignmentsTimeout);
+        clearTimeout(notesTimeout);
+        clearTimeout(snapshotTimeout);
+        
+        // Set all data to empty values instead of using mock data
+        setPerformanceData([]);
+        setNextLesson(null);
+        setAssignments([]);
+        setPendingAssignments([]);
+        setRecentNotes([]);
+        setWeeklySnapshot({ lessons: [], assignments: [] });
+        
+        setIsPerformanceLoading(false);
+        setIsNextLessonLoading(false);
+        setIsPendingAssignmentsLoading(false);
+        setIsRecentNotesLoading(false);
+        setIsWeeklySnapshotLoading(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
+    
+    // Clear timeouts on component unmount
+    return () => {
+      setIsPerformanceLoading(false);
+      setIsNextLessonLoading(false);
+      setIsPendingAssignmentsLoading(false);
+      setIsRecentNotesLoading(false);
+      setIsWeeklySnapshotLoading(false);
+    };
   }, [userData]);
 
   // Get file type from URL or filename
@@ -248,406 +316,393 @@ const Dashboard = () => {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
       
-      setTimeRemaining({ hours, minutes, seconds });
+      setTimeRemaining({
+        hours,
+        minutes,
+        seconds
+      });
     };
     
-    // Update immediately
+    // Update immediately then every second
     updateCounter();
-    
-    // Then update every second
     const interval = setInterval(updateCounter, 1000);
     
+    // Cleanup on unmount
     return () => clearInterval(interval);
   };
 
-  // Get assignment urgency styling
-  const getAssignmentUrgencyStyle = (assignment) => {
-    if (!assignment.dueDate) return "border-gray-200";
-    
-    const daysUntilDue = assignment.dueDate.diff(dayjs(), 'day');
-    
-    if (daysUntilDue < 0) return "border-red-400 bg-red-50";
-    if (daysUntilDue <= 2) return "border-yellow-400 bg-yellow-50";
-    return "border-gray-200";
+  // Format time for display
+  const formatTime = (timeString) => {
+    if (!timeString) return 'N/A';
+    return dayjs(timeString).format('h:mm A');
   };
 
-  // Render loading state
+  // Format date relative to today
+  const formatRelativeDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return dayjs(dateString).calendar(null, {
+      sameDay: '[Today]',
+      nextDay: '[Tomorrow]',
+      nextWeek: 'dddd',
+      lastDay: '[Yesterday]',
+      lastWeek: '[Last] dddd',
+      sameElse: 'MM/DD/YYYY'
+    });
+  };
+
+  // Calculate days until due
+  const getDaysUntilDue = (dueDate) => {
+    if (!dueDate) return null;
+    const due = dayjs(dueDate);
+    const now = dayjs();
+    const days = due.diff(now, 'day');
+    
+    if (days < 0) return 'Overdue';
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
+    return `Due in ${days} days`;
+  };
+
+  // Get status color for assignments
+  const getStatusColor = (dueDate) => {
+    if (!dueDate) return 'gray';
+    
+    const due = dayjs(dueDate);
+    const now = dayjs();
+    const days = due.diff(now, 'day');
+    
+    if (days < 0) return 'text-red-500';
+    if (days === 0) return 'text-orange-500';
+    if (days <= 2) return 'text-amber-500';
+    return 'text-blue-500';
+  };
+
+  // Sort assignments by due date
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    return new Date(a.dueDate) - new Date(b.dueDate);
+  });
+
+  // Performance Data Fallback UI
+  const PerformanceDataFallbackUI = () => (
+    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+      <div className="flex justify-center items-center mb-4">
+        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No Performance Data Available</h3>
+      <p className="text-gray-600 mb-4">Your performance data couldn't be loaded. This could be because you haven't completed any assignments yet or there was an issue retrieving your data.</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+      >
+        Refresh Dashboard
+      </button>
+    </div>
+  );
+
+  // Next Lesson Fallback UI
+  const NextLessonFallbackUI = () => (
+    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+      <div className="flex justify-center items-center mb-4">
+        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No Upcoming Lessons</h3>
+      <p className="text-gray-600 mb-4">You don't have any scheduled lessons. Check back later or book a session with a tutor.</p>
+      <a 
+        href="/lessons" 
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm inline-block"
+      >
+        Browse Available Lessons
+      </a>
+    </div>
+  );
+
+  // Weekly Snapshot Fallback UI
+  const WeeklySnapshotFallbackUI = () => (
+    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center h-full">
+      <div className="flex justify-center items-center mb-4">
+        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No Weekly Schedule Data</h3>
+      <p className="text-gray-600 mb-4">We couldn't find any scheduled lessons or assignments for this week in your schedule. Try booking a session or checking again later.</p>
+      <button 
+        onClick={() => window.location.href = '/lessons'}  
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+      >
+        Book a Session
+      </button>
+    </div>
+  );
+
+  // Compute assignment urgency styles
+  const getAssignmentUrgencyStyle = (assignment) => {
+    if (!assignment.dueDate) return 'bg-gray-100 text-gray-700';
+    if (assignment.isUrgent) return 'bg-red-100 text-red-700';
+    return 'bg-blue-100 text-blue-700';
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  // Render error state
-  if (error) {
+  // Error state
+  if (error && !showFallbackUI) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-        <strong className="font-bold">Error:</strong>
-        <span className="block sm:inline"> {error}</span>
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <motion.div
-      className="max-w-6xl mx-auto"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      <motion.h1 
-        className="text-3xl font-bold mb-6"
-        variants={itemVariants}
+    <div className="container mx-auto px-4 py-8">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
-        Your Dashboard
-      </motion.h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {/* Next Lesson Card */}
-      <motion.div 
-          className="col-span-1 md:col-span-2 lg:col-span-2"
-        variants={itemVariants}
-        >
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">📅</span>
-              Next Lesson
-            </h2>
-            
-            {nextLesson ? (
-          <div>
-                <h3 className="text-lg font-semibold text-gray-800">{nextLesson.title}</h3>
-                <div className="mb-2 text-gray-700">with {nextLesson.teacher}</div>
-                <div className="flex items-center mb-4 text-gray-700">
-                  <svg className="w-4 h-4 mr-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                  {nextLesson.date} at {nextLesson.time}
+        {/* First column - Performance chart */}
+        <motion.div variants={itemVariants} className="lg:col-span-2">
+          <div className="bg-white shadow-card rounded-xl mb-6 border border-gray-100 overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Weekly Performance</h2>
+              
+              {isPerformanceLoading ? (
+                <div className="py-10 flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : performanceData && performanceData.length > 0 ? (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 0, bottom: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="assignment_name" 
+                        tick={{ fontSize: 12 }}
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                      />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip 
+                        formatter={(value, name) => [`${value}%`, 'Score']}
+                        labelFormatter={(label) => `Assignment: ${label}`}
+                      />
+                      <Bar 
+                        dataKey="score" 
+                        name="Score" 
+                        radius={[4, 4, 0, 0]}
+                      >
+                        {performanceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <PerformanceDataFallbackUI />
+              )}
+            </div>
           </div>
           
-                <div className="mb-2 text-gray-700 font-medium">Starting in:</div>
-                <div className="flex space-x-1 mb-4">
-                  <div className="bg-primary/10 rounded px-3 py-2 text-center">
-                    <div className="text-xl font-mono font-semibold text-primary">{String(timeRemaining.hours).padStart(2, '0')}</div>
-                    <div className="text-xs text-gray-500">Hours</div>
-                  </div>
-                  <div className="bg-primary/10 rounded px-3 py-2 text-center">
-                    <div className="text-xl font-mono font-semibold text-primary">{String(timeRemaining.minutes).padStart(2, '0')}</div>
-                    <div className="text-xs text-gray-500">Minutes</div>
-            </div>
-                  <div className="bg-primary/10 rounded px-3 py-2 text-center">
-                    <div className="text-xl font-mono font-semibold text-primary">{String(timeRemaining.seconds).padStart(2, '0')}</div>
-                    <div className="text-xs text-gray-500">Seconds</div>
-          </div>
-        </div>
-        
-        <motion.button 
-                  className={`flex items-center justify-center px-6 py-2 rounded ${
-                    timeRemaining.hours === 0 && timeRemaining.minutes <= 15 
-                      ? 'bg-green-500 hover:bg-green-600 text-white' 
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  } transition`}
-                  whileHover={timeRemaining.hours === 0 && timeRemaining.minutes <= 15 ? { scale: 1.03 } : {}}
-                  whileTap={timeRemaining.hours === 0 && timeRemaining.minutes <= 15 ? { scale: 0.97 } : {}}
-                  onClick={() => {
-                    if (timeRemaining.hours === 0 && timeRemaining.minutes <= 15 && nextLesson.meeting_link) {
-                      window.open(nextLesson.meeting_link, '_blank');
-                    } else if (timeRemaining.hours === 0 && timeRemaining.minutes <= 15) {
-                      alert('Meeting link not available yet');
-                    }
-                  }}
-                >
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                  </svg>
-                  {timeRemaining.hours === 0 && timeRemaining.minutes <= 15 ? 'Join Now' : 'Join (Available 15 min before)'}
-        </motion.button>
+          {/* Performance Insights Panel */}
+          <motion.div variants={itemVariants}>
+            <PerformanceInsightsPanel />
+          </motion.div>
+        </motion.div>
+
+        {/* Second column - Next lesson and weekly snapshot */}
+        <motion.div variants={itemVariants} className="flex flex-col space-y-6">
+          {/* Next lesson */}
+          <div className="bg-white shadow-card rounded-xl border border-gray-100 overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Next Lesson</h2>
+                <a href="/lessons" className="text-sm text-primary hover:text-primary-dark transition-colors font-medium">
+                  View all
+                </a>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="mb-2 text-lg font-medium">No upcoming lessons</p>
-                <p>You have no upcoming lessons. Enjoy your free time!</p>
-              </div>
-            )}
-          </div>
-      </motion.div>
-        
-        {/* Pending Assignments Card */}
-        <motion.div variants={itemVariants} className="col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="mr-2">✅</span>
-                Pending Assignments
-              </div>
-              {assignments.length > 0 && (
-                <span className="bg-primary text-white text-xs rounded-full px-2 py-1">
-                  {assignments.length}
-                </span>
-              )}
-            </h2>
-            
-            {assignments.length > 0 ? (
-              <div className="space-y-3">
-                {assignments.slice(0, 3).map((assignment) => (
-                  <div 
-                    key={assignment.id}
-                    className={`border rounded-md p-3 transition-all ${getAssignmentUrgencyStyle(assignment)}`}
-                  >
-                    <div className="flex justify-between">
-                      <h3 className="font-medium text-gray-800">{assignment.title}</h3>
-                      <span className={`text-xs font-medium px-2 py-1 rounded ${
-                        assignment.isUrgent ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {assignment.formattedDueDate}
+              
+              {isNextLessonLoading ? (
+                <div className="py-6 flex justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : nextLesson ? (
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-500">
+                        {formatRelativeDate(nextLesson.scheduled_time || nextLesson.startTime)}
+                      </span>
+                      <span className="text-sm font-medium text-primary">
+                        {formatTime(nextLesson.scheduled_time || nextLesson.startTime)}
                       </span>
                     </div>
-                    {assignment.subject && (
-                      <p className="text-sm text-gray-600 mt-1">{assignment.subject}</p>
-                    )}
-                    <div className="mt-2">
-                      <motion.a
-                        href={`/assignments/${assignment.id}`}
-                        className="text-sm text-primary hover:text-primary-dark flex items-center"
-                        whileHover={{ x: 2 }}
-                      >
-                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Submit Assignment
-                      </motion.a>
+                    
+                    <h3 className="text-xl font-semibold mt-1 text-gray-800">
+                      {nextLesson.subject || nextLesson.title || 'Tutoring Session'}
+                    </h3>
+                    
+                    <div className="mt-3 flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 mr-1 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      <span>
+                        {nextLesson.tutor_name || nextLesson.teacher || 'Assigned Tutor'}
+                      </span>
                     </div>
                   </div>
-                ))}
-                
-                {assignments.length > 3 && (
-                  <motion.a
-                    href="/assignments"
-                    className="block text-center text-sm text-primary hover:text-primary-dark mt-3"
-                    whileHover={{ y: -2 }}
-                  >
-                    View all {assignments.length} assignments
-                  </motion.a>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-                <p className="mb-2 text-lg font-medium">All caught up!</p>
-                <p>You have no pending assignments. Great job!</p>
-              </div>
-            )}
-              </div>
-            </motion.div>
-        
-        {/* Performance Overview Chart */}
-        <motion.div variants={itemVariants} className="col-span-1 md:col-span-2 lg:col-span-3">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">📊</span>
-              Performance Overview
-            </h2>
-            
-            {performanceData.length > 0 ? (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={performanceData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="assignment_name"
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      interval={0}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip 
-                      formatter={(value, name) => [`${value}%`, 'Score']}
-                      labelFormatter={(value) => `Assignment: ${value}`}
-                    />
-                    <Bar 
-                      dataKey="score" 
-                      name="Score" 
-                      fill="#3b82f6"
-                      radius={[4, 4, 0, 0]}
-                      barSize={30}
+                  
+                  <div className="bg-white p-4">
+                    <a 
+                      href={`/lessons/${nextLesson.id || 'upcoming'}`} 
+                      className="w-full py-2 flex items-center justify-center bg-primary text-white hover:bg-primary-dark transition-colors rounded-lg text-sm font-medium"
                     >
-                      {performanceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <p className="mb-2 text-lg font-medium">No performance data yet</p>
-                <p>Start submitting assignments to track your progress here.</p>
-              </div>
-            )}
-          </div>
-      </motion.div>
-      
-      {/* Recent Notes Card */}
-        <motion.div variants={itemVariants} className="col-span-1 lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">📘</span>
-              Recently Shared Notes
-            </h2>
-            
-            {recentNotes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {recentNotes.slice(0, 4).map((note) => (
-                  <div 
-                    key={note.id}
-                    className="border border-gray-200 rounded-md p-3 flex"
-                  >
-                    <div className="mr-3 flex-shrink-0">
-                      {note.fileType === 'pdf' && (
-                        <div className="w-10 h-12 bg-red-100 flex items-center justify-center rounded">
-                          <span className="text-red-700 text-xs font-bold">PDF</span>
-                        </div>
-                      )}
-                      {note.fileType === 'docx' && (
-                        <div className="w-10 h-12 bg-blue-100 flex items-center justify-center rounded">
-                          <span className="text-blue-700 text-xs font-bold">DOC</span>
-                        </div>
-                      )}
-                      {note.fileType === 'xlsx' && (
-                        <div className="w-10 h-12 bg-green-100 flex items-center justify-center rounded">
-                          <span className="text-green-700 text-xs font-bold">XLS</span>
-                        </div>
-                      )}
-                      {(note.fileType === 'jpg' || note.fileType === 'png') && (
-                        <div className="w-10 h-12 bg-purple-100 flex items-center justify-center rounded">
-                          <span className="text-purple-700 text-xs font-bold">IMG</span>
-                        </div>
-                      )}
-                      {note.fileType === 'default' && (
-                        <div className="w-10 h-12 bg-gray-100 flex items-center justify-center rounded">
-                          <span className="text-gray-700 text-xs font-bold">FILE</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="font-medium text-gray-800 text-sm line-clamp-1">{note.title}</h3>
-                      <p className="text-xs text-gray-600">{note.subject}</p>
-                      <p className="text-xs text-gray-500 mt-1">{note.date}</p>
-                      
-                      <motion.a
-                        href={`/notes`}
-                        className="text-xs text-primary hover:text-primary-dark flex items-center mt-1"
-                        whileHover={{ x: 2 }}
-                      >
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        View
-                      </motion.a>
-                    </div>
+                      <span>View Details</span>
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </a>
                   </div>
-                ))}
-                
-                {recentNotes.length > 4 && (
-                  <motion.a
-                    href="/notes"
-                    className="block text-center text-sm text-primary hover:text-primary-dark mt-3 col-span-1 md:col-span-2"
-                    whileHover={{ y: -2 }}
-                  >
-                    View all notes
-                  </motion.a>
-                )}
+                </div>
+              ) : (
+                <NextLessonFallbackUI />
+              )}
+            </div>
+          </div>
+          
+          {/* Weekly snapshot */}
+          <div className="bg-white shadow-card rounded-xl border border-gray-100 overflow-hidden flex-grow">
+            <div className="p-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Weekly Snapshot</h2>
+                <a href="/lessons" className="text-sm text-primary hover:text-primary-dark transition-colors font-medium">
+                  View all lessons
+                </a>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="mb-2 text-lg font-medium">No notes shared yet</p>
-                <p>Check back later for new notes from your tutors.</p>
-              </div>
-            )}
+              
+              {isWeeklySnapshotLoading ? (
+                <div className="py-6 flex justify-center flex-grow">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : weeklySnapshot && 
+                  ((Array.isArray(weeklySnapshot.lessons) && weeklySnapshot.lessons.length > 0) || 
+                   (Array.isArray(weeklySnapshot.assignments) && weeklySnapshot.assignments.length > 0)) ? (
+                <div className="flex flex-col h-full">
+                  {/* Lessons */}
+                  {weeklySnapshot.lessons && Array.isArray(weeklySnapshot.lessons) && weeklySnapshot.lessons.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-sm uppercase text-gray-500 font-medium mb-2">Upcoming Sessions</h3>
+                      <div className="space-y-2">
+                        {weeklySnapshot.lessons.slice(0, 3).map((lesson, index) => (
+                          <div key={lesson.id || index} className="p-3 bg-blue-50 rounded-lg flex justify-between items-center">
+                            <div>
+                              <div className="font-medium text-gray-800">{lesson.subject}</div>
+                              <div className="text-sm text-gray-600">{lesson.day} at {lesson.time}</div>
+                            </div>
+                            <div className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                              {(lesson.tutor && typeof lesson.tutor === 'string') 
+                                ? lesson.tutor.split(' ')[0] 
+                                : (lesson.tutor_name && typeof lesson.tutor_name === 'string')
+                                  ? lesson.tutor_name.split(' ')[0]
+                                  : 'Tutor'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 text-center">
+                        <a 
+                          href="/lessons" 
+                          className="text-sm font-medium text-primary hover:text-primary-dark transition-colors inline-flex items-center"
+                        >
+                          <span>View all sessions</span>
+                          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Assignments */}
+                  {weeklySnapshot.assignments && Array.isArray(weeklySnapshot.assignments) && weeklySnapshot.assignments.length > 0 && (
+                    <div>
+                      <h3 className="text-sm uppercase text-gray-500 font-medium mb-2">Upcoming Assignments</h3>
+                      <div className="space-y-2">
+                        {weeklySnapshot.assignments.slice(0, 3).map((assignment, index) => (
+                          <div key={assignment.id || index} className="p-3 bg-amber-50 rounded-lg flex justify-between items-center">
+                            <div>
+                              <div className="font-medium text-gray-800">{assignment.title}</div>
+                              <div className="text-sm text-gray-600">Due {assignment.dueDay}</div>
+                            </div>
+                            <div className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
+                              {assignment.subject}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 text-center">
+                        <a 
+                          href="/assignments" 
+                          className="text-sm font-medium text-primary hover:text-primary-dark transition-colors inline-flex items-center"
+                        >
+                          <span>View all assignments</span>
+                          <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <WeeklySnapshotFallbackUI />
+              )}
+            </div>
           </div>
         </motion.div>
-        
-        {/* Weekly Snapshot Card */}
-        <motion.div variants={itemVariants} className="col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">📆</span>
-              This Week at a Glance
-            </h2>
-            
-            {(weeklySnapshot.lessons.length > 0 || weeklySnapshot.assignments.length > 0) ? (
-              <div>
-                {weeklySnapshot.lessons.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="font-medium text-gray-700 mb-2">Upcoming Lessons</h3>
-                    <ul className="space-y-2">
-                      {weeklySnapshot.lessons.map((lesson) => (
-                        <li key={lesson.id} className="flex items-start">
-                          <div className="w-20 flex-shrink-0 font-medium text-gray-500">{lesson.day}</div>
-                          <div>
-                            <div className="font-medium text-gray-800">{lesson.subject}</div>
-                            <div className="text-sm text-gray-500">{lesson.time}</div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {weeklySnapshot.assignments.length > 0 && (
-                  <div>
-                    <h3 className="font-medium text-gray-700 mb-2">Due This Week</h3>
-                    <ul className="space-y-2">
-                      {weeklySnapshot.assignments.map((assignment) => (
-                        <li key={assignment.id} className="flex items-start">
-                          <div className="w-20 flex-shrink-0 font-medium text-gray-500">{assignment.dueDay}</div>
-                          <div>
-                            <div className="font-medium text-gray-800">{assignment.title}</div>
-                            <div className="text-sm text-gray-500">{assignment.subject}</div>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="mb-2 text-lg font-medium">Your week is clear</p>
-                <p>Nothing scheduled for this week.</p>
-              </div>
-            )}
-              </div>
-            </motion.div>
-            
-            {/* Tutor Recommendations Section */}
-            <motion.div variants={itemVariants} className="col-span-1 md:col-span-2 lg:col-span-3">
-              <TutorRecommendationsSection />
-            </motion.div>
-        </div>
-    </motion.div>
+      </motion.div>
+      
+      {/* Tutor Recommendations (Full width at the bottom) */}
+      <motion.div 
+        variants={itemVariants}
+        className="mt-6"
+      >
+        <TutorRecommendationsSection />
+      </motion.div>
+    </div>
   );
 };
 

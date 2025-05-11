@@ -50,11 +50,171 @@ api.interceptors.response.use(
 // Dashboard services
 export const dashboardService = {
   getDashboard: () => api.get('/api/dashboard/'),
-  getNextLesson: () => api.get('/api/student/next-lesson/'),
-  getPendingAssignments: () => api.get('/api/student/assignments/pending/'),
-  getRecentNotes: () => api.get('/notes/'),
-  getPerformance: () => api.get('/api/student/performance/'),
-  getWeeklySnapshot: () => api.get('/api/student/weekly-snapshot/'),
+  getNextLesson: () => api.get('/sessions/')
+    .then(res => {
+      // Get the next upcoming session from the sessions list
+      if (res.data && Array.isArray(res.data)) {
+        const now = new Date();
+        const upcoming = res.data
+          .filter(session => new Date(session.scheduled_time || session.startTime) > now)
+          .sort((a, b) => new Date(a.scheduled_time || a.startTime) - new Date(b.scheduled_time || b.startTime));
+        return { data: upcoming[0] || null };
+      }
+      return { data: null };
+    })
+    .catch(err => {
+      console.error('Error fetching next lesson:', err);
+      // Return null data instead of rejecting
+      return { data: null };
+    }),
+  getPendingAssignments: () => api.get('/api/assignments/')
+    .then(res => {
+      // Filter to only return pending assignments
+      if (res.data && Array.isArray(res.data)) {
+        const pendingAssignments = res.data.filter(assignment => 
+          !assignment.is_completed && assignment.due_date && new Date(assignment.due_date) > new Date()
+        );
+        return { data: pendingAssignments };
+      }
+      return { data: [] };
+    })
+    .catch(err => {
+      console.error('Error fetching pending assignments:', err);
+      // Return empty array instead of rejecting
+      return { data: [] };
+    }),
+  getRecentNotes: () => api.get('/notes/')
+    .catch(err => {
+      console.error('Error fetching notes:', err);
+      // Return empty array instead of rejecting
+      return { data: [] };
+    }),
+  getPerformance: () => api.get('/student/performance/')
+    .then(res => {
+      // Extract and format performance data
+      if (res.data && res.data.assignments) {
+        // Convert the assignment data to the format expected by the chart
+        const chartData = res.data.assignments
+          .filter(assignment => assignment.status === 'Completed') // Only show completed assignments
+          .map(assignment => ({
+            assignment_name: assignment.title,
+            score: assignment.percentage || 0,
+            max_score: 100,
+            subject: assignment.subject || 'General'
+          }));
+        return { data: chartData };
+      }
+      
+      // If no student performance data, try dashboard API as fallback
+      return api.get('/api/dashboard/')
+        .then(dashRes => {
+          return { data: dashRes.data?.performance_data || [] };
+        })
+        .catch(() => {
+          // If both endpoints fail, return empty array
+          return { data: [] };
+        });
+    })
+    .catch(() => {
+      // Return empty array instead of rejecting
+      return { data: [] };
+    }),
+  getWeeklySnapshot: () => api.get('/api/dashboard/')
+    .then(res => {
+      // Extract weekly snapshot from dashboard response
+      if (res.data?.weekly_snapshot) {
+        return { data: res.data.weekly_snapshot };
+      }
+      
+      // Try extracting from sessions and assignments as a fallback
+      const createWeeklySnapshot = async () => {
+        try {
+          // Get upcoming sessions
+          const sessionsResponse = await api.get('/sessions/');
+          const assignmentsResponse = await api.get('/api/assignments/');
+          
+          const now = new Date();
+          const oneWeekFromNow = new Date(now);
+          oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+          
+          // Format sessions for weekly snapshot
+          const upcomingSessions = sessionsResponse.data && Array.isArray(sessionsResponse.data) 
+            ? sessionsResponse.data
+                .filter(session => {
+                  const sessionDate = new Date(session.scheduled_time || session.start_time || session.startTime);
+                  return sessionDate > now && sessionDate < oneWeekFromNow;
+                })
+                .map(session => {
+                  const sessionDate = new Date(session.scheduled_time || session.start_time || session.startTime);
+                  return {
+                    id: session.id,
+                    day: sessionDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                    subject: session.subject || session.title || 'Tutoring Session',
+                    time: sessionDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+                    tutor: session.tutor_name || session.teacher_name || 'Assigned Tutor'
+                  };
+                })
+                .sort((a, b) => {
+                  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
+                })
+            : [];
+            
+          // Format assignments for weekly snapshot
+          const upcomingAssignments = assignmentsResponse.data && Array.isArray(assignmentsResponse.data)
+            ? assignmentsResponse.data
+                .filter(assignment => {
+                  if (!assignment.due_date) return false;
+                  const dueDate = new Date(assignment.due_date);
+                  return dueDate > now && dueDate < oneWeekFromNow;
+                })
+                .map(assignment => {
+                  const dueDate = new Date(assignment.due_date);
+                  return {
+                    id: assignment.id,
+                    title: assignment.title || 'Unnamed Assignment',
+                    dueDay: dueDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                    subject: assignment.subject || 'General'
+                  };
+                })
+                .sort((a, b) => {
+                  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                  return daysOfWeek.indexOf(a.dueDay) - daysOfWeek.indexOf(b.dueDay);
+                })
+            : [];
+            
+          return {
+            lessons: upcomingSessions,
+            assignments: upcomingAssignments
+          };
+        } catch (error) {
+          console.error("Error creating weekly snapshot:", error);
+          return { lessons: [], assignments: [] };
+        }
+      };
+      
+      return createWeeklySnapshot()
+        .then(snapshot => {
+          if (snapshot) {
+            return { data: snapshot };
+          }
+          
+          // If creating the snapshot fails, return empty object
+          return { data: { lessons: [], assignments: [] } };
+        });
+    })
+    .catch(err => {
+      console.error('Error fetching weekly snapshot:', err);
+      // Return empty data instead of mock data
+      return { data: { lessons: [], assignments: [] } };
+    }),
+  // Get detailed performance data including progress trends and recommendations
+  getDetailedPerformance: () => api.get('/student/performance/')
+    .catch(err => {
+      console.error('Error fetching detailed performance:', err);
+      // Return empty object instead of mock data
+      return { data: { strengths_weaknesses: { strengths: [], weaknesses: [] }, recommendations: [] } };
+    }),
 };
 
 // Lessons/Sessions services
@@ -71,11 +231,11 @@ export const lessonsService = {
 
 // Assignments services
 export const assignmentsService = {
-  getAssignments: () => api.get('/api/assignments/'),
-  getAssignmentById: (id) => api.get(`/api/assignments/${id}/`),
-  submitAssignment: (id, data) => api.post(`/api/assignments/${id}/submissions/`, data),
+  getAssignments: () => api.get('/assignments/'),
+  getAssignmentById: (id) => api.get(`/assignments/${id}/`),
+  submitAssignment: (id, data) => api.post(`/assignments/${id}/submissions/`, data),
   getSessionAssignments: (sessionId) => api.get(`/assignments/session/${sessionId}/`),
-  getAssignmentStats: () => api.get('/api/assignments/stats/'),
+  getAssignmentStats: () => api.get('/assignments/stats/'),
 };
 
 // Notes services
@@ -106,12 +266,12 @@ export const progressService = {
 
 // Settings services
 export const settingsService = {
-  getStudentSettings: () => api.get('/api/student/settings/'),
-  updateStudentSettings: (data) => api.patch('/api/student/settings/', data),
-  changePassword: (data) => api.post('/api/student/change-password/', data),
-  getNotificationPreferences: () => api.get('/api/student/preferences/'),
-  updateNotificationPreferences: (data) => api.put('/api/student/preferences/', data),
-  updateThemePreference: (theme) => api.put('/api/student/preferences/theme/', { theme }),
+  getStudentSettings: () => api.get('/student/settings/'),
+  updateStudentSettings: (data) => api.patch('/student/settings/', data),
+  changePassword: (data) => api.post('/student/change-password/', data),
+  getNotificationPreferences: () => api.get('/student/preferences/'),
+  updateNotificationPreferences: (data) => api.put('/student/preferences/', data),
+  updateThemePreference: (theme) => api.put('/student/preferences/theme/', { theme }),
 };
 
 export default api; 

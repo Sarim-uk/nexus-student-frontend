@@ -8,6 +8,7 @@ import Assignments from '../pages/Assignments';
 import Notes from '../pages/Notes';
 import Settings from '../pages/Settings';
 import Login from '../pages/auth/Login';
+import Register from '../pages/auth/Register';
 import VideoRoom from '../pages/VideoRoom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import authService from '../services/auth';
@@ -22,6 +23,11 @@ const AppRoutes = () => {
       {/* Public routes */}
       <Route path="/login" element={
         isStudent ? <Navigate to="/dashboard" replace /> : <Login />
+      } />
+      
+      {/* Registration route */}
+      <Route path="/register" element={
+        isStudent ? <Navigate to="/dashboard" replace /> : <Register />
       } />
       
       {/* Redirect root based on auth status */}
