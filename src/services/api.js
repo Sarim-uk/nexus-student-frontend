@@ -231,11 +231,11 @@ export const lessonsService = {
 
 // Assignments services
 export const assignmentsService = {
-  getAssignments: () => api.get('/assignments/'),
-  getAssignmentById: (id) => api.get(`/assignments/${id}/`),
-  submitAssignment: (id, data) => api.post(`/assignments/${id}/submissions/`, data),
-  getSessionAssignments: (sessionId) => api.get(`/assignments/session/${sessionId}/`),
-  getAssignmentStats: () => api.get('/assignments/stats/'),
+  getAssignments: () => api.get('/api/assignments/'),
+  getAssignmentById: (id) => api.get(`/api/assignments/${id}/`),
+  submitAssignment: (id, data) => api.post(`/api/assignments/${id}/submissions/`, data),
+  getSessionAssignments: (sessionId) => api.get(`/api/assignments/session/${sessionId}/`),
+  getAssignmentStats: () => api.get('/api/assignments/stats/'),
 };
 
 // Notes services
