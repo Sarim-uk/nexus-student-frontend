@@ -421,34 +421,34 @@ const Lessons = React.memo(() => {
               </div>
             </div>
             {tutors.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Your Tutors</h3>
-                <div className="flex overflow-x-auto space-x-4 pb-4 -mx-2 px-2">
-                  {tutors.slice(0, 5).map(tutor => {
+              <div className="mt-12 mb-16">
+                <h3 className="text-2xl font-semibold text-gray-800 mb-8 text-center">Our Featured Tutors</h3>
+                <div className="flex flex-wrap justify-center -mx-3">
+                  {tutors.slice(0, 6).map(tutor => {
                     const firstName = tutor.first_name || tutor.firstName || tutor.tutor_ids?.first_name || tutor.user?.first_name || '';
                     const lastName = tutor.last_name || tutor.lastName || tutor.tutor_ids?.last_name || tutor.user?.last_name || '';
-                    const email = tutor.email || tutor.tutor_ids?.email || tutor.user?.email || '';
                     const profilePicture = tutor.profile_picture_url || tutor.tutor_ids?.profile_picture_url || tutor.user?.profile_picture_url;
                     const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`;
                     return (
-                      <div
-                        key={tutor.id}
-                        className="flex-shrink-0 w-48 bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => handleBookSession(tutor.id)}
-                      >
-                        <div className="p-4">
-                          <div className="flex items-center mb-2">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium overflow-hidden mr-3">
-                              {profilePicture ? (
-                                <img src={profilePicture} alt={`${firstName} ${lastName}`} className="w-full h-full object-cover" />
-                              ) : (
-                                <span>{initials}</span>
-                              )}
-                            </div>
-                            <div className="truncate">
-                              <h3 className="font-semibold text-sm truncate">{firstName} {lastName}</h3>
-                              <p className="text-gray-500 text-xs truncate">{email}</p>
-                            </div>
+                      <div key={tutor.id} className="w-full sm:w-1/2 md:w-1/3 px-3 mb-6">
+                        <div className="flex flex-col items-center h-full">
+                          <div className="mb-4 w-24 h-24 rounded-full bg-gradient-to-r from-primary/90 to-primary-dark border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+                            {profilePicture ? (
+                              <img src={profilePicture} alt={`${firstName} ${lastName}`} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-2xl text-white font-medium">{initials}</span>
+                            )}
+                          </div>
+                          <div className="h-10 flex items-center justify-center">
+                            <h3 className="font-semibold text-lg text-gray-800">{firstName} {lastName}</h3>
+                          </div>
+                          <div className="mt-auto pt-4">
+                            <button 
+                              className="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm hover:shadow"
+                              onClick={() => handleBookSession(tutor.id)}
+                            >
+                              Book Session
+                            </button>
                           </div>
                         </div>
                       </div>
