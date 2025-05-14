@@ -13,8 +13,9 @@ import { motion } from 'framer-motion';
  * @param {number} props.tutor.match_probability - Match probability (0-100)
  * @param {number} props.tutor.confidence - Confidence score (0-100)
  * @param {Function} props.onViewProfile - Function to call when View Profile button is clicked
+ * @param {Function} props.onRequestSession - Function to call when Book Session button is clicked
  */
-const TutorRecommendationCard = ({ tutor, onViewProfile }) => {
+const TutorRecommendationCard = ({ tutor, onViewProfile, onRequestSession }) => {
   // Ensure we have valid values with fallbacks
   const tutorId = tutor.tutor_id || tutor.id || 'unknown';
   const tutorName = tutor.tutor_name || `${tutor.first_name || ''} ${tutor.last_name || ''}`.trim() || 'Unknown Tutor';
@@ -171,16 +172,22 @@ const TutorRecommendationCard = ({ tutor, onViewProfile }) => {
         )}
       </div>
       
-      {/* Button */}
-      <button
-        onClick={() => onViewProfile(tutorId)}
-        className="py-3 bg-gradient-to-r from-primary to-secondary text-white hover:from-secondary hover:to-primary transition-all duration-300 text-sm font-medium flex items-center justify-center"
-      >
-        <span>View Profile</span>
-        <svg className="w-4 h-4 ml-2 transform transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </button>
+      {/* Update the card actions to include both buttons */}
+      <div className="flex border-t border-gray-100">
+        <button
+          onClick={() => onViewProfile(tutorId)}
+          className="flex-1 py-3 text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
+        >
+          View Profile
+        </button>
+        <div className="w-px bg-gray-100"></div>
+        <button
+          onClick={() => onRequestSession(tutorId)}
+          className="flex-1 py-3 text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
+        >
+          Book Session
+        </button>
+      </div>
     </motion.div>
   );
 };
@@ -202,7 +209,8 @@ TutorRecommendationCard.propTypes = {
     targeted_subject: PropTypes.string,
     experience_years: PropTypes.number
   }).isRequired,
-  onViewProfile: PropTypes.func.isRequired
+  onViewProfile: PropTypes.func.isRequired,
+  onRequestSession: PropTypes.func.isRequired
 };
 
 export default TutorRecommendationCard; 

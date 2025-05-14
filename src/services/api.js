@@ -227,6 +227,117 @@ export const lessonsService = {
   getSessionNotes: (sessionId) => api.get(`/notes/session/${sessionId}/`),
   getTutorMeetingInfo: (tutorId) => api.get(`/tutor/meeting-info/${tutorId}/`),
   rateSession: (data) => api.post('/session-rating/', data),
+  // New methods for tutor availability and booking
+  getTutorAvailability: (tutorId) => api.get(`/tutors/${tutorId}/availability/`).then(res => res.data),
+  getTutorDetails: (tutorId) => {
+    // Try different endpoint formats depending on the ID format
+    return api.get(`/users/${tutorId}/`)
+      .then(res => {
+        console.log(`Got tutor data from /users/${tutorId}/`, res.data);
+        return res.data;
+      })
+      .catch(error => {
+        console.log(`Error fetching tutor from /users/${tutorId}/, trying alternate endpoint`);
+        // If first request fails, try alternate endpoint
+        return api.get(`/tutors/${tutorId}/`)
+          .then(res => {
+            console.log(`Got tutor data from /tutors/${tutorId}/`, res.data);
+            
+            // Check if we got the Tutor model which only has tutor_ids reference
+            if (res.data && res.data.tutor_ids && !res.data.first_name) {
+              const userIdFromTutor = res.data.tutor_ids;
+              console.log(`Found Tutor model with tutor_ids=${userIdFromTutor}, fetching user details`);
+              
+              // Make a second API call to get the user details
+              return api.get(`/users/${userIdFromTutor}/`)
+                .then(userRes => {
+                  console.log(`Got user data for tutor_ids=${userIdFromTutor}`, userRes.data);
+                  
+                  // Combine the tutor and user data
+                  return {
+                    ...res.data,
+                    ...userRes.data,
+                    // Save the original objects for reference
+                    tutor_model: res.data,
+                    user_model: userRes.data
+                  };
+                })
+                .catch(userErr => {
+                  console.error(`Failed to get user data for tutor_ids=${userIdFromTutor}`, userErr);
+                  // Return the tutor data as a fallback
+                  return res.data;
+                });
+            }
+            
+            return res.data;
+          })
+          .catch(error => {
+            // Try one more endpoint format that might be used
+            console.log(`Error fetching tutor from /tutors/${tutorId}/ as well, trying last endpoint`);
+            return api.get(`/users/?id=${tutorId}`)
+              .then(res => {
+                console.log(`Got tutor data from /users/?id=${tutorId}`, res.data);
+                // If it returns an array, get the first item
+                if (Array.isArray(res.data) && res.data.length > 0) {
+                  return res.data[0];
+                }
+                return res.data;
+              });
+          });
+      });
+  },
+  bookSession: (bookingData) => api.post('/bookings/', bookingData).then(res => res.data),
+  getAllTutors: () => api.get('/users/?role=tutor')
+    .then(res => {
+      console.log('ALL TUTORS API RESPONSE:', res.data);
+      
+      // Check if response needs processing
+      let tutors = [];
+      
+      if (Array.isArray(res.data)) {
+        tutors = res.data;
+      } else if (res.data && Array.isArray(res.data.results)) {
+        tutors = res.data.results;
+      } else if (res.data && typeof res.data === 'object') {
+        tutors = [res.data];
+      }
+      
+      // Process to ensure we have name fields for display
+      const processedTutors = tutors.map(tutor => {
+        // Ensure we have fields needed for display
+        if (!tutor.first_name && !tutor.last_name && tutor.username) {
+          // This is likely a Django User model - extract name from username or email
+          if (tutor.email && tutor.email.includes('@')) {
+            const localPart = tutor.email.split('@')[0];
+            const nameParts = localPart.includes('.') ? 
+              localPart.split('.') : 
+              [localPart];
+            
+            if (nameParts.length >= 2) {
+              tutor.first_name = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+              tutor.last_name = nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1);
+            } else if (nameParts.length === 1) {
+              tutor.first_name = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+            }
+          } else if (tutor.username) {
+            const nameParts = tutor.username.includes('.') ?
+              tutor.username.split('.') :
+              [tutor.username];
+            
+            if (nameParts.length >= 2) {
+              tutor.first_name = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+              tutor.last_name = nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1);
+            } else if (nameParts.length === 1) {
+              tutor.first_name = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+            }
+          }
+        }
+        
+        return tutor;
+      });
+      
+      return processedTutors;
+    }),
 };
 
 // Assignments services
@@ -266,12 +377,11 @@ export const progressService = {
 
 // Settings services
 export const settingsService = {
-  getStudentSettings: () => api.get('/student/settings/'),
-  updateStudentSettings: (data) => api.patch('/student/settings/', data),
-  changePassword: (data) => api.post('/student/change-password/', data),
-  getNotificationPreferences: () => api.get('/student/preferences/'),
-  updateNotificationPreferences: (data) => api.put('/student/preferences/', data),
-  updateThemePreference: (theme) => api.put('/student/preferences/theme/', { theme }),
+  getStudentSettings: () => api.get('/student/profile/'),
+  updateStudentSettings: (data) => api.patch('/student/profile/', data),
+  updatePassword: (data) => api.post('/auth/password/change/', data),
+  updateNotificationPreferences: (data) => api.patch('/student/notifications/', data),
+  updateThemePreferences: (data) => api.patch('/student/preferences/', data),
 };
 
 export default api; 

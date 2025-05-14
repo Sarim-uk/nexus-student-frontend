@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { profileService } from '../../services/api';
+import SessionBookingModal from './SessionBookingModal';
 
 /**
  * A modal component that displays a tutor's profile information
@@ -15,6 +16,7 @@ const TutorProfileModal = ({ tutorId, isOpen, onClose }) => {
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
   // Fetch tutor data when modal opens or tutorId changes
   useEffect(() => {
@@ -79,6 +81,19 @@ const TutorProfileModal = ({ tutorId, isOpen, onClose }) => {
   // Function to calculate tutor experience years based on tutorId
   const getTutorExperience = () => {
     return 1 + (parseInt(tutorId) % 20); // 1-20 years
+  };
+
+  const handleOpenBookingModal = () => {
+    setBookingModalOpen(true);
+  };
+
+  const handleCloseBookingModal = () => {
+    setBookingModalOpen(false);
+  };
+
+  const handleBookingSuccess = (bookingDetails) => {
+    console.log('Booking successful:', bookingDetails);
+    // You could show a success message or notification here
   };
 
   return (
@@ -249,6 +264,7 @@ const TutorProfileModal = ({ tutorId, isOpen, onClose }) => {
                   <div className="flex flex-col sm:flex-row gap-3 mt-8">
                     <button
                       className="flex-1 py-3 px-4 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium shadow-sm hover:shadow"
+                      onClick={handleOpenBookingModal}
                     >
                       Request Session
                     </button>
@@ -263,6 +279,14 @@ const TutorProfileModal = ({ tutorId, isOpen, onClose }) => {
               )}
             </div>
           </motion.div>
+
+          {/* Session Booking Modal */}
+          <SessionBookingModal
+            tutorId={tutorId}
+            isOpen={bookingModalOpen}
+            onClose={handleCloseBookingModal}
+            onSuccess={handleBookingSuccess}
+          />
         </>
       )}
     </AnimatePresence>

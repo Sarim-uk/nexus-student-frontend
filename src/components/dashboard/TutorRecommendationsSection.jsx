@@ -4,6 +4,7 @@ import useTutorRecommendations from '../../hooks/useTutorRecommendations';
 import TutorRecommendationCard from './TutorRecommendationCard';
 import { useRecommendationsContext } from '../../context/RecommendationsContext';
 import TutorProfileModal from '../modals/TutorProfileModal';
+import SessionBookingModal from '../modals/SessionBookingModal';
 import { motion } from 'framer-motion';
 
 /**
@@ -18,7 +19,8 @@ const TutorRecommendationsSection = () => {
   const { updateRecommendations } = useRecommendationsContext();
   const [displayedRecommendations, setDisplayedRecommendations] = useState([]);
   const [selectedTutorId, setSelectedTutorId] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [weakSubjects, setWeakSubjects] = useState([]);
 
   // Process recommendations when they change
@@ -46,12 +48,29 @@ const TutorRecommendationsSection = () => {
   // Function to handle viewing a tutor's profile
   const handleViewProfile = (tutorId) => {
     setSelectedTutorId(tutorId);
-    setIsModalOpen(true);
+    setIsProfileModalOpen(true);
   };
 
-  // Function to close the modal
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  // Function to handle requesting a session with a tutor
+  const handleRequestSession = (tutorId) => {
+    setSelectedTutorId(tutorId);
+    setIsBookingModalOpen(true);
+  };
+
+  // Function to close the profile modal
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+  };
+
+  // Function to close the booking modal
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
+  };
+
+  // Function to handle successful booking
+  const handleBookingSuccess = (bookingDetails) => {
+    console.log('Booking successful:', bookingDetails);
+    // You could redirect to lessons page or show a success message
   };
 
   // Show toast notification if there's an error
@@ -160,6 +179,7 @@ const TutorRecommendationsSection = () => {
                     key={tutor.tutor_id || `tutor-${index}`}
                     tutor={tutor}
                     onViewProfile={handleViewProfile}
+                    onRequestSession={handleRequestSession}
                   />
                 ))}
               </div>
@@ -271,6 +291,7 @@ const TutorRecommendationsSection = () => {
                     key={tutor.tutor_id || `tutor-${index}`}
                     tutor={tutor}
                     onViewProfile={handleViewProfile}
+                    onRequestSession={handleRequestSession}
                   />
                 ))}
               </div>
@@ -302,10 +323,18 @@ const TutorRecommendationsSection = () => {
       {selectedTutorId && (
         <TutorProfileModal
           tutorId={selectedTutorId}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
+          isOpen={isProfileModalOpen}
+          onClose={handleCloseProfileModal}
         />
       )}
+
+      {/* Session Booking Modal */}
+      <SessionBookingModal
+        tutorId={selectedTutorId}
+        isOpen={isBookingModalOpen}
+        onClose={handleCloseBookingModal}
+        onSuccess={handleBookingSuccess}
+      />
     </>
   );
 };
