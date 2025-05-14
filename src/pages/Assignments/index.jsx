@@ -71,6 +71,8 @@ const Assignments = () => {
       
       try {
         const response = await assignmentsService.getAssignments();
+        console.log('Response:', response);
+        console.log('Response Data:', response.data);
         
         if (!response || !response.data) {
           throw new Error('The server returned an invalid response format');
@@ -84,15 +86,22 @@ const Assignments = () => {
           title: assignment.title,
           description: assignment.description,
           dueDate: assignment.due_date ? dayjs(assignment.due_date) : null,
-          status: assignment.status,
+          status: assignment.submission_status || assignment.status || 'Pending',
           subject: assignment.subject || 'General',
           fileUrl: assignment.file,
           maxScore: assignment.max_score || 100,
-          score: assignment.grade_info?.points || assignment.score || 0,
-          submitted: Boolean(assignment.submitted),
-          submissionDate: assignment.submission_date ? dayjs(assignment.submission_date) : null,
-          feedbackReceived: assignment.feedback_received || Boolean(assignment.grade_info),
-          feedback: assignment.grade_info?.feedback || assignment.feedback
+          // Use grade information if available
+          score: assignment.grade?.points || assignment.grade_info?.points || assignment.score || 0,
+          percentage: assignment.grade?.percentage || (assignment.grade?.points && assignment.max_score ? 
+                      Math.round((assignment.grade.points / assignment.max_score) * 100 * 10) / 10 : 0),
+          submitted: Boolean(assignment.submitted) || assignment.submission_status === 'Submitted' || 
+                     assignment.submission_status === 'Graded',
+          submissionDate: assignment.submitted_at ? dayjs(assignment.submitted_at) : 
+                          assignment.submission_date ? dayjs(assignment.submission_date) : null,
+          feedbackReceived: Boolean(assignment.grade?.feedback) || assignment.feedback_received || 
+                           Boolean(assignment.grade_info?.feedback),
+          feedback: assignment.grade?.feedback || assignment.grade_info?.feedback || assignment.feedback || '',
+          gradedAt: assignment.grade?.graded_at ? dayjs(assignment.grade.graded_at) : null
         }));
         
         // Sort by due date (closest first)
@@ -392,25 +401,51 @@ const Assignments = () => {
                       </div>
                     </form>
                   ) : (
-                    <div className="bg-green-50 rounded-lg p-4">
+                    <div className={`rounded-lg p-4 ${selectedAssignment.feedbackReceived ? 'bg-green-50' : 'bg-blue-50'}`}>
                       <div className="flex items-center gap-2 text-green-700">
                         <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Assignment Submitted</span>
+                        <span className="font-medium">
+                          {selectedAssignment.feedbackReceived ? 'Assignment Graded' : 'Assignment Submitted'}
+                        </span>
                       </div>
                       <p className="mt-1 text-sm text-green-600">
-                        Your assignment has been submitted successfully.
+                        {selectedAssignment.feedbackReceived 
+                          ? `Your assignment has been graded with a score of ${selectedAssignment.score}/${selectedAssignment.maxScore}.`
+                          : `Your assignment has been submitted successfully.`
+                        }
                         {selectedAssignment.submissionDate && (
-                          <span> on {selectedAssignment.submissionDate.format('MMM D, YYYY [at] h:mm A')}</span>
+                          <span> Submitted on {selectedAssignment.submissionDate.format('MMM D, YYYY [at] h:mm A')}</span>
                         )}
                       </p>
                     </div>
                   )}
 
                   {/* Feedback */}
-                  {selectedAssignment.feedbackReceived && selectedAssignment.feedback && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h3 className="font-medium text-gray-900 mb-2">Feedback</h3>
-                      <p className="text-sm text-gray-600">{selectedAssignment.feedback}</p>
+                  {selectedAssignment.feedbackReceived && (
+                    <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                      <div>
+                        <h3 className="font-medium text-gray-900 mb-1">Grade</h3>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-2xl font-bold text-blue-700">
+                            {selectedAssignment.score}/{selectedAssignment.maxScore}
+                          </span>
+                          <span className="text-lg text-blue-700">
+                            ({selectedAssignment.percentage || Math.round(((selectedAssignment.score || 0) / (selectedAssignment.maxScore || 100)) * 100)}%)
+                          </span>
+                        </div>
+                        {selectedAssignment.gradedAt && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Graded on {selectedAssignment.gradedAt.format('MMM D, YYYY [at] h:mm A')}
+                          </p>
+                        )}
+                      </div>
+                      
+                      {selectedAssignment.feedback && (
+                        <div>
+                          <h3 className="font-medium text-gray-900 mb-1">Feedback</h3>
+                          <p className="text-sm text-gray-600">{selectedAssignment.feedback}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
