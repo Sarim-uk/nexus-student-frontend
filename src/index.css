@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base theme styles */
+@layer base {
+  body {
+    @apply bg-background text-gray-800 antialiased transition-colors duration-200;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 transition-colors duration-200;
+  }
+  
+  a {
+    @apply text-primary hover:text-primary-dark transition-colors duration-200;
+  }
+  
+  /* Dark mode base styles */
+  .dark body {
+    background-color: #0f172a; /* Deeper, softer navy background */
+    color: #e2e8f0; /* Soft off-white for better eye comfort */
+  }
+  
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #f8fafc; /* Very light gray for headings */
+  }
+  
+  .dark a {
+    color: #60a5fa; /* Softer blue */
+    text-decoration: none;
+  }
+  
+  .dark a:hover {
+    color: #93c5fd; /* Lighter blue on hover */
+    text-decoration: underline;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -22,16 +57,16 @@
 
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar-track {
-  background: #2D3748;
+  background: #1a1f2e;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #4A5568;
+  background: #384056;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: #4a546e;
 }
 
 /* Custom animation classes */
@@ -56,55 +91,305 @@
   }
 }
 
-body {
-  @apply bg-background text-gray-800 antialiased;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-}
-
-/* Dark mode basic styles */
-.dark body {
-  @apply bg-gray-900 text-gray-100;
-}
-
+/* Comprehensive dark mode styles */
 .dark .bg-white {
-  @apply bg-gray-800;
+  background-color: #1e293b; /* Softer slate blue background for content areas */
+}
+
+.dark .text-primary {
+  color: #63B3ED; /* Brighter accent for primary text in dark mode */
+}
+
+.dark .text-gray-900 {
+  color: #F7FAFC;
 }
 
 .dark .text-gray-800 {
-  @apply text-gray-200;
+  color: #E2E8F0;
 }
 
 .dark .text-gray-700 {
-  @apply text-gray-300;
+  color: #CBD5E0;
 }
 
 .dark .text-gray-600 {
-  @apply text-gray-400;
+  color: #A0AEC0; /* More visible mid-gray for dark backgrounds */
 }
 
-.dark .text-gray-500 {
-  color: #9CA3AF;
+/* Use a different approach for gray-500 text in dark mode */
+.dark .gray-500-dark {
+  color: #A0AEC0;
+}
+
+.dark .border-gray-300 {
+  border-color: #4A5568;
 }
 
 .dark .border-gray-200 {
-  @apply border-gray-700;
+  border-color: #2D3748;
 }
 
 .dark .border-gray-100 {
-  @apply border-gray-800;
+  border-color: #1A202C;
 }
 
 .dark .bg-gray-50 {
-  @apply bg-gray-900;
+  background-color: #1a1f2e; /* Consistent with bg-white in dark mode */
+}
+
+.dark .bg-gray-100 {
+  background-color: #232736; /* Slightly lighter than bg-white in dark mode */
 }
 
 .dark .shadow-md {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.26);
 }
 
+.dark .bg-primary\/10 {
+  background-color: rgba(99, 179, 237, 0.2); /* Brighter accent with transparency */
+}
+
+.dark .bg-gold\/10 {
+  background-color: rgba(212, 175, 55, 0.15); /* Softer gold with transparency */
+}
+
+.dark .bg-accent\/5 {
+  background-color: rgba(99, 179, 237, 0.15);
+}
+
+.dark .border-accent\/20 {
+  border-color: rgba(99, 179, 237, 0.3);
+}
+
+/* Form inputs in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #334155; /* Lighter than content areas */
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8; /* More visible placeholder */
+}
+
+.dark .placeholder-gray-400::placeholder {
+  color: #718096;
+}
+
+/* Button styles in dark mode */
+.dark .bg-primary {
+  background-color: #2B6CB0; /* More visible primary button in dark mode */
+}
+
+.dark .hover\:bg-primary-dark:hover {
+  background-color: #2C5282; /* Darker hover state */
+}
+
+/* Style for interactive elements in dark mode */
+.dark button:not([disabled]),
+.dark .btn {
+  @apply shadow-sm;
+}
+
+.dark button:active:not([disabled]),
+.dark .btn:active {
+  @apply shadow-inner;
+}
+
+/* Custom accent text color for dark mode - use this instead of text-accent in dark mode */
+.dark-accent-text {
+  color: #63B3ED; /* Brighter accent color */
+}
+
+.dark .text-highlight {
+  color: #90CDF4; /* Even brighter for highlights */
+}
+
+/* Card styles in dark mode */
+.dark .shadow-card {
+  box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.3), 0 2px 10px -1px rgba(0, 0, 0, 0.2);
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark .card,
+.dark .bg-card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+/* Handle modals and overlays in dark mode */
+.dark .modal-backdrop, 
+.dark .overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .modal-content {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+/* Link styling for dark mode */
+.dark a:not(.btn):hover {
+  text-decoration: underline;
+}
+
+/* Focus states for dark mode */
+.dark *:focus-visible {
+  outline: 2px solid #63B3ED;
+  outline-offset: 2px;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Card and panel styles */
+.dark .card,
+.dark .panel,
+.dark .bg-card,
+.dark .shadow-card,
+.dark [class*="shadow"] {
+  background-color: #1e293b; /* Consistent slate blue */
+  border-color: #334155; /* Lighter border */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Main content area improvements */
+.dark main,
+.dark .main-content,
+.dark .content-area {
+  background-color: #1e293b; /* Slate blue for main content */
+  color: #e2e8f0; /* Comfortable text color */
+}
+
+/* Content container styles */
+.dark .container,
+.dark .content-container {
+  background-color: #1e293b;
+  border-radius: 0.5rem;
+  border-color: #334155;
+}
+
+/* Improve tables in dark mode */
+.dark table {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark th {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+.dark td {
+  border-color: #334155;
+}
+
+.dark tr:nth-child(even) {
+  background-color: #263449;
+}
+
+.dark .table-hover tr:hover {
+  background-color: #334155;
+}
+
+/* Navigation improvements */
+.dark nav,
+.dark .navbar,
+.dark .sidebar {
+  background-color: #0f172a; /* Deeper navy for nav areas */
+  border-color: #334155;
+}
+
+.dark .nav-link,
+.dark .sidebar-link {
+  color: #cbd5e1;
+}
+
+.dark .nav-link:hover,
+.dark .nav-link.active,
+.dark .sidebar-link:hover,
+.dark .sidebar-link.active {
+  background-color: #1e293b;
+  color: #60a5fa;
+}
+
+/* Dashboard card improvements */
+.dark .dashboard-card,
+.dark .stat-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark .dashboard-card-header,
+.dark .stat-card-header {
+  border-bottom-color: #334155;
+}
+
+/* Text contrast ratio improvements */
+.dark .muted-text,
+.dark .text-muted {
+  color: #94a3b8; /* More visible muted text */
+}
+
+.dark .secondary-text,
+.dark .text-secondary {
+  color: #cbd5e1; /* Higher contrast secondary text */
+}
+
+/* Dividers and separators */
+.dark hr,
+.dark .divider {
+  border-color: #334155;
+  opacity: 0.6;
+}
+
+/* Status indicators */
+.dark .status-indicator.active,
+.dark .status-badge.active {
+  background-color: #10b981; /* Emerald green */
+  color: #f0fdfa;
+}
+
+.dark .status-indicator.inactive,
+.dark .status-badge.inactive {
+  background-color: #6b7280; /* Gray */
+  color: #f9fafb;
+}
+
+/* Notifications */
+.dark .notification-badge {
+  background-color: #f43f5e; /* Rose */
+  color: white;
+}
+
+/* Shadows for better depth perception - with custom class names to avoid conflicts */
+.dark-mode-shadow-small {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode-shadow-medium {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark-mode-shadow-large {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Apply dark mode shadow styles to Tailwind shadow classes */
+.dark *[class*="shadow"] {
+  box-shadow: none;
 }

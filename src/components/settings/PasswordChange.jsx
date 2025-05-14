@@ -56,7 +56,7 @@ const PasswordChange = ({ onSuccess, onError }) => {
     setLoading(true);
     
     try {
-      await settingsService.changePassword({
+      await settingsService.updatePassword({
         current_password: formData.current_password,
         new_password: formData.new_password
       });

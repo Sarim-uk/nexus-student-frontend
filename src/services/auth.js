@@ -15,6 +15,8 @@ const authService = {
         // Store user data
         if (response.data.user) {
           localStorage.setItem('user', JSON.stringify(response.data.user));
+          // Store user_id separately for easier access
+          localStorage.setItem('user_id', response.data.user.id);
         }
         
         return response.data;
@@ -30,6 +32,7 @@ const authService = {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
+    localStorage.removeItem('user_id');
     window.location.href = '/login';
   },
   
@@ -40,6 +43,11 @@ const authService = {
       return JSON.parse(userStr);
     }
     return null;
+  },
+  
+  // Get current user ID
+  getUserId: () => {
+    return localStorage.getItem('user_id');
   },
   
   // Check if user is authenticated

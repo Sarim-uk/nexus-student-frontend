@@ -422,7 +422,10 @@ export const progressService = {
 export const settingsService = {
   getStudentSettings: () => api.get('/student-profile/'),
   updateStudentSettings: (data) => api.patch('/student-profile/', data),
-  updatePassword: (data) => api.post('/auth/password/change/', data),
+  updatePassword: (data) => api.post('/auth/password/change/', {
+    current_password: data.current_password,
+    new_password: data.new_password
+  }),
   updateNotificationPreferences: (data) => api.patch('/student/notifications/', data),
   updateThemePreferences: (data) => api.patch('/student/preferences/', data),
 };

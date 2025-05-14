@@ -1,17 +1,23 @@
 /**
- * Theme initialization script
- * This script is imported in index.js and runs before the React app renders
- * to prevent flash of wrong theme
+ * Theme initialization utility
+ * Used to initialize theme settings before the React app renders
+ * to prevent flash of incorrect theme
  */
 
-export const initializeTheme = () => {
-  // Check localStorage for saved theme preference
+/**
+ * Initialize theme settings on application start
+ * This is called from index.js before the app renders
+ */
+const initializeTheme = () => {
+  // Get theme preference from localStorage
   const savedTheme = localStorage.getItem('theme');
   const followSystem = localStorage.getItem('followSystemTheme') === 'true';
   
+  // If user prefers to follow system theme
   if (followSystem) {
     // Check system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
     if (prefersDark) {
       document.documentElement.classList.add('dark');
     } else {
@@ -36,8 +42,10 @@ export const initializeTheme = () => {
       mediaQuery.addListener(handleChange);
     }
   } else if (savedTheme === 'dark') {
+    // Use saved theme preference
     document.documentElement.classList.add('dark');
   } else {
+    // Default to light theme
     document.documentElement.classList.remove('dark');
   }
 };
