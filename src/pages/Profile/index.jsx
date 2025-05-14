@@ -62,6 +62,7 @@ const Profile = () => {
         throw new Error('User not authenticated');
       }
       
+      console.log('Current user data:', userData);
       setUser(userData);
       
       // Initialize form with user data even without profile
@@ -75,18 +76,28 @@ const Profile = () => {
       
       // Fetch profile data
       try {
+        console.log('Fetching profile data...');
         const profileResponse = await profileService.getStudentProfile();
+        console.log('Profile response:', profileResponse);
         
         if (profileResponse && profileResponse.data) {
           setProfile(profileResponse.data);
           
+          // Log complete profile object structure to see all available fields
+          console.log('COMPLETE PROFILE OBJECT:', JSON.stringify(profileResponse.data, null, 2));
+          
+          console.log('Setting form data with profile fields:', profileResponse.data);
           // Update form with profile data
-          setFormData(prevData => ({
-            ...prevData,
-            phone: profileResponse.data.phone || '',
-            dob: profileResponse.data.dob || '',
-            address: profileResponse.data.address || '',
-          }));
+          setFormData(prevData => {
+            const updatedData = {
+              ...prevData,
+              phone: profileResponse.data.phone_number || profileResponse.data.phone || '',
+              dob: profileResponse.data.date_of_birth || profileResponse.data.dob || '',
+              address: profileResponse.data.street_address || profileResponse.data.address || '',
+            };
+            console.log('Updated form data:', updatedData);
+            return updatedData;
+          });
         }
       } catch (profileError) {
         console.log('Profile fetch error:', profileError);
@@ -188,17 +199,47 @@ const Profile = () => {
           last_name: formData.last_name,
         };
         
+        console.log('Updating user info:', userUpdateData);
         await profileService.updateUserInfo(user.id, userUpdateData);
+        console.log('User info update successful');
       }
       
       // Then update profile
       const profileUpdateData = {
+        phone_number: formData.phone,
+        date_of_birth: formData.dob,
+        street_address: formData.address,
+        
+        // Try alternative field names
         phone: formData.phone,
         dob: formData.dob,
-        address: formData.address
+        address: formData.address,
+        
+        // Try using profile_meta for these fields
+        profile_meta: {
+          phone_number: formData.phone,
+          date_of_birth: formData.dob,
+          street_address: formData.address,
+          
+          phone: formData.phone,
+          dob: formData.dob,
+          address: formData.address
+        },
+        
+        // Include learning preferences to preserve them
+        visual_learning_preference: profile?.visual_learning_preference || 3,
+        auditory_learning_preference: profile?.auditory_learning_preference || 3,
+        reading_learning_preference: profile?.reading_learning_preference || 3,
+        kinesthetic_learning_preference: profile?.kinesthetic_learning_preference || 3,
+        
+        // Include other required fields
+        bio: profile?.bio || '',
+        education: profile?.education || ''
       };
       
-      await profileService.updateStudentProfile(profileUpdateData);
+      console.log('Sending profile data:', profileUpdateData);
+      const response = await profileService.updateStudentProfile(profileUpdateData);
+      console.log('Profile update successful, response:', response);
       
       // Update localStorage user
       const currentUser = authService.getCurrentUser();
@@ -217,12 +258,17 @@ const Profile = () => {
       // Trigger recommendations refresh by updating the counter
       setProfileUpdated(prev => prev + 1);
       
-      // Refresh user data
-      fetchUserData();
+      // Add a delay before refreshing to ensure backend has processed
+      setTimeout(async () => {
+        // Refresh user data
+        console.log('Refreshing user data after update...');
+        await fetchUserData();
+        console.log('User data refreshed');
+      }, 1000);
       
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError('Failed to update profile. Please try again.');
+      setError('Failed to update profile. Please check console for details.');
     } finally {
       setLoading(false);
     }

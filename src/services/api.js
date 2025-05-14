@@ -362,8 +362,28 @@ export const notesService = {
 export const profileService = {
   getStudentProfile: () => api.get('/student-profile/'),
   getTutorProfile: () => api.get('/tutor-profile/'),
-  updateStudentProfile: (data) => api.post('/student-profile/', data), // Using POST because the API supports it for updates
-  updateUserInfo: (userId, data) => api.put(`/users/${userId}/`, data), // Changed from PATCH to PUT
+  updateStudentProfile: (data) => {
+    console.log('Updating student profile with data:', data);
+    // Use POST instead of PATCH as the server requires POST for this endpoint
+    return api.post('/student-profile/', data, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => {
+      console.log('Profile update response:', response.data);
+      return response;
+    }).catch(error => {
+      console.error('Profile update error:', error.response?.data || error);
+      throw error;
+    });
+  },
+  updateUserInfo: (userId, data) => {
+    // The /users/{id}/ endpoint doesn't support updates, so use student-profile instead
+    return api.post('/student-profile/', {
+      ...data,
+      user_id: userId // Pass the user ID in the request body if needed
+    });
+  },
   getTutorRecommendations: (topN = 5) => api.get(`/tutor-recommendations/?top_n=${topN}`),
   provideFeedback: (data) => api.post('/recommendation-feedback/', data),
   getTutorDetails: (tutorId) => api.get(`/tutors/${tutorId}/`),
@@ -377,8 +397,8 @@ export const progressService = {
 
 // Settings services
 export const settingsService = {
-  getStudentSettings: () => api.get('/student/profile/'),
-  updateStudentSettings: (data) => api.patch('/student/profile/', data),
+  getStudentSettings: () => api.get('/student-profile/'),
+  updateStudentSettings: (data) => api.patch('/student-profile/', data),
   updatePassword: (data) => api.post('/auth/password/change/', data),
   updateNotificationPreferences: (data) => api.patch('/student/notifications/', data),
   updateThemePreferences: (data) => api.patch('/student/preferences/', data),

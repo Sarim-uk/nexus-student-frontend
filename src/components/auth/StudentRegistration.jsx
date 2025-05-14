@@ -41,6 +41,12 @@ const StudentRegistration = () => {
       { name: 'email', label: 'Email Address', type: 'email', required: true },
       { name: 'password', label: 'Password', type: 'password', required: true },
       { name: 'confirmPassword', label: 'Confirm Password', type: 'password', required: true },
+      
+      // Personal information
+      { name: 'phone_number', label: 'Phone Number', type: 'text', required: false },
+      { name: 'date_of_birth', label: 'Date of Birth', type: 'date', required: false },
+      { name: 'street_address', label: 'Street Address', type: 'text', required: false },
+      
       // Learning style preferences - scale 1 to 5
       { 
         name: 'visual_learning_preference', 
@@ -221,6 +227,12 @@ const StudentRegistration = () => {
           password: values.password,
           first_name: values.firstName,
           last_name: values.lastName,
+          
+          // Personal information
+          phone_number: values.phone_number || '',
+          date_of_birth: values.date_of_birth || null,
+          street_address: values.street_address || '',
+          
           role: 'student', // Make sure to specify role
           // Learning preferences directly from form
           visual_learning_preference: parseInt(values.visual_learning_preference) || 3,
