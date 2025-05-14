@@ -141,21 +141,35 @@ const Dashboard = () => {
         // Process next lesson
         if (nextLessonRes.data) {
           const nextSessionData = nextLessonRes.data;
-          const formattedLesson = {
-            id: nextSessionData.id || nextSessionData.uuid,
-            title: nextSessionData.subject || nextSessionData.title || "Untitled Session",
-            teacher: nextSessionData.tutor_name || nextSessionData.teacher_name || "Instructor",
-            startTime: nextSessionData.start_time || nextSessionData.startTime,
-            date: dayjs(nextSessionData.start_time || nextSessionData.startTime).format("dddd, MMMM D, YYYY"),
-            time: dayjs(nextSessionData.start_time || nextSessionData.startTime).format("h:mm A"),
-            meeting_link: nextSessionData.meeting_link || nextSessionData.meetingLink
-          };
+          // Validate important fields
+          const hasValidTime = Boolean(nextSessionData.scheduled_time || nextSessionData.start_time || nextSessionData.startTime);
+          const hasValidTitle = Boolean(nextSessionData.subject || nextSessionData.title);
           
-          setNextLesson(formattedLesson);
-          
-          // Calculate time remaining for next lesson
-          if (formattedLesson.startTime) {
-            calculateTimeRemaining(new Date(formattedLesson.startTime));
+          if (hasValidTitle || hasValidTime) {
+            const formattedLesson = {
+              id: nextSessionData.id || nextSessionData.uuid || 'upcoming',
+              title: nextSessionData.subject || nextSessionData.title || "Untitled Session",
+              teacher: nextSessionData.tutor_name || nextSessionData.teacher_name || nextSessionData.teacher || "Aaron Carpenter",
+              startTime: nextSessionData.scheduled_time || nextSessionData.start_time || nextSessionData.startTime,
+              date: hasValidTime 
+                ? dayjs(nextSessionData.scheduled_time || nextSessionData.start_time || nextSessionData.startTime).format("dddd, MMMM D, YYYY")
+                : "No scheduled date",
+              time: hasValidTime
+                ? dayjs(nextSessionData.scheduled_time || nextSessionData.start_time || nextSessionData.startTime).format("h:mm A")
+                : "No scheduled time",
+              meeting_link: nextSessionData.meeting_link || nextSessionData.meetingLink || "/lessons"
+            };
+            
+            setNextLesson(formattedLesson);
+            
+            // Calculate time remaining for next lesson
+            if (formattedLesson.startTime) {
+              calculateTimeRemaining(new Date(formattedLesson.startTime));
+            }
+          } else {
+            // Data doesn't have required fields, show fallback UI
+            console.log("Next lesson data is insufficient:", nextSessionData);
+            setNextLesson(null);
           }
         } else {
           console.log("No next lesson data available");
@@ -564,10 +578,14 @@ const Dashboard = () => {
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-gray-500">
-                        {formatRelativeDate(nextLesson.scheduled_time || nextLesson.startTime)}
+                        {nextLesson.scheduled_time || nextLesson.startTime 
+                          ? formatRelativeDate(nextLesson.scheduled_time || nextLesson.startTime)
+                          : 'Not scheduled'}
                       </span>
                       <span className="text-sm font-medium text-primary">
-                        {formatTime(nextLesson.scheduled_time || nextLesson.startTime)}
+                        {nextLesson.scheduled_time || nextLesson.startTime 
+                          ? formatTime(nextLesson.scheduled_time || nextLesson.startTime)
+                          : ''}
                       </span>
                     </div>
                     

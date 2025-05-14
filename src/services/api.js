@@ -56,9 +56,32 @@ export const dashboardService = {
       if (res.data && Array.isArray(res.data)) {
         const now = new Date();
         const upcoming = res.data
-          .filter(session => new Date(session.scheduled_time || session.startTime) > now)
-          .sort((a, b) => new Date(a.scheduled_time || a.startTime) - new Date(b.scheduled_time || b.startTime));
-        return { data: upcoming[0] || null };
+          .filter(session => {
+            // Make sure scheduled_time or startTime exists and is valid
+            const sessionTime = session.scheduled_time || session.startTime;
+            return sessionTime && new Date(sessionTime) > now;
+          })
+          .sort((a, b) => {
+            const aTime = new Date(a.scheduled_time || a.startTime);
+            const bTime = new Date(b.scheduled_time || b.startTime);
+            return aTime - bTime;
+          });
+        
+        // Basic validation of the upcoming session
+        const nextSession = upcoming[0];
+        if (nextSession) {
+          // Ensure required fields exist
+          if (!nextSession.subject && !nextSession.title) {
+            nextSession.title = "Tutoring Session";
+          }
+          
+          if (!nextSession.tutor_name && !nextSession.teacher_name && !nextSession.teacher) {
+            nextSession.teacher_name = "Instructor";
+          }
+          
+          return { data: nextSession };
+        }
+        return { data: null };
       }
       return { data: null };
     })
