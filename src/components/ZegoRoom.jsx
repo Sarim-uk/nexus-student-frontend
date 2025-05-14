@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
+import axios from 'axios';
 
-const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
+const ZegoRoom = ({ roomId, userName, userId, sessionId, role = 'Host', onLeaveRoom }) => {
   const navigate = useNavigate();
   const roomRef = React.useRef(null);
+  const [emotion, setEmotion] = useState('Detecting...');
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!roomId || !userId) {
@@ -75,6 +78,62 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
     };
   }, [roomId, userId, userName, onLeaveRoom, navigate]);
 
+  // Set up emotion detection
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((error) => {
+        console.error('Error accessing camera:', error);
+      });
+    
+    const interval = setInterval(() => {
+      captureFrame();
+    }, 3000); // Capture every 3 seconds to reduce load
+    
+    // Cleanup function
+    return () => {
+      // Clear the emotion detection interval
+      clearInterval(interval);
+      
+      // Clean up video stream
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, [roomId, userId]);
+
+  const captureFrame = async () => {
+    if (!videoRef.current || !videoRef.current.srcObject || !roomId || !userId) return;
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('image', blob);
+      formData.append('session_id', sessionId);
+      formData.append('user_id', userId);
+      
+      try {
+        const response = await axios.post('http://localhost:8000/vidchat/detect-emotion/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        setEmotion(response.data.emotions[0] || 'No emotion detected');
+      } catch (error) {
+        console.error('Error detecting emotion:', error);
+      }
+    }, 'image/jpeg');
+  };
+
   return (
     <Box 
       sx={{
@@ -85,7 +144,8 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
         borderRadius: 1,
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'relative'
       }}
     >
       {(!roomId || !userId) && (
@@ -108,6 +168,22 @@ const ZegoRoom = ({ roomId, userName, userId, role = 'Host', onLeaveRoom }) => {
           </Typography>
         </Box>
       )}
+      
+      {/* Hidden video element for emotion detection */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        style={{
+          visibility: 'hidden',
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          opacity: 0
+        }}
+      />
+      
+      {/* Remove Emotion Display from student view */}
       
       <Box
         ref={roomRef}

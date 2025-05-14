@@ -67,6 +67,10 @@ const VideoRoom = () => {
   const searchParams = new URLSearchParams(location.search);
   const roomId = searchParams.get('roomID');
 
+  // Try to get sessionId from location.state or other means (add logic here if available)
+  const sessionId = location.state?.sessionId || roomId; //
+  // Fallback to roomId if sessionId is not available
+  console.log("sessionId", sessionId);
   if (!roomId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -104,6 +108,7 @@ const VideoRoom = () => {
           roomId={roomId}
           userName={userData.userName}
           userId={userData.userId}
+          sessionId={sessionId}
           role="Participant"
           onLeaveRoom={handleLeaveRoom}
         />
